@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Agent {
+  id         String    @id @default(cuid())
+  name       String
+  apiKeyHash String    @unique // sha256 of the bearer key
+  claimToken String    @unique // for human ownership claim (moltbook-style)
+  claimedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  bids       Bid[]
+  listings   Listing[]
+}
+
+model Listing {
+  id          String       @id @default(cuid())
+  slug        String       @unique // used in /go/[slug]
+  targetUrl   String       @unique // normalized: params stripped, shorteners expanded
+  title       String
+  totalBid    Int // whole USD dollars, current effective bid
+  firstBidAt  DateTime     @default(now()) // tiebreaker: older keeps higher rank
+  lastRaiseAt DateTime     @default(now())
+  clicks      Int          @default(0)
+  ownerId     String
+  owner       Agent        @relation(fields: [ownerId], references: [id])
+  bids        Bid[]
+  clickEvents ClickEvent[]
+
+  @@index([totalBid(sort: Desc), firstBidAt(sort: Asc)]) // the leaderboard query
+}
+
+model Bid {
+  id           String   @id @default(cuid())
+  amount       Int // dollars actually paid this transaction (the delta on raises)
+  newTotal     Int // listing total after this bid
+  kind         BidKind // NEW | RAISE
+  paymentNonce String   @unique // EIP-3009 authorization nonce: idempotency pre-settle
+  txHash       String?  @unique // on-chain settlement tx hash (set once settled)
+  network      String // "base" | "base-sepolia"
+  payerAddress String // the wallet that paid (from the verified authorization)
+  listingId    String
+  listing      Listing  @relation(fields: [listingId], references: [id])
+  agentId      String
+  agent        Agent    @relation(fields: [agentId], references: [id])
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt(sort: Desc)]) // activity feed
+}
+
+enum BidKind {
+  NEW
+  RAISE
+}
+
+model ClickEvent {
+  id        String   @id @default(cuid())
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([listingId, createdAt])
+}
