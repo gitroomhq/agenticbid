@@ -1,7 +1,5 @@
-import type { Bid, Listing, PrismaClient } from "@/generated/prisma/client";
-import { Prisma } from "@/generated/prisma/client";
+import type { Listing, PrismaClient } from "@/generated/prisma/client";
 import { ApiError } from "@/lib/errors";
-import type { Quote, PricingEngine } from "@/domain/pricing/pricing-engine";
 import { LEADERBOARD_ORDER, RankService } from "@/domain/ranking/rank-service";
 import { uniqueSlug } from "@/domain/listing/slug";
 
@@ -11,44 +9,29 @@ export interface BoardRow {
   title: string;
   description: string | null;
   targetUrl: string;
-  totalBid: number;
+  votes: number;
   clicks: number;
-  firstBidAt: Date;
-  lastRaiseAt: Date;
+  listedAt: Date;
+  lastVoteAt: Date;
   verified: boolean;
-  minRaise: number;
 }
 
-export interface ApplyBidInput {
+export interface CreateListingInput {
   agentId: string;
-  /** Normalized target; url/title ignored for raises. */
+  /** Normalized target. */
   target: { url: string; title: string; description?: string | null };
-  quote: Quote;
-  /** Existing listing id when raising. */
-  listingId?: string;
-  paymentNonce: string;
-  network: string;
-  payerAddress: string;
-}
-
-export interface ApplyBidResult {
-  listing: Listing;
-  bid: Bid;
-  /** True when this exact payment credential was already applied (replay). */
-  replayed: boolean;
 }
 
 export class ListingService {
   constructor(
     private readonly db: PrismaClient,
     private readonly ranks: RankService,
-    private readonly pricing: PricingEngine,
   ) {}
 
   async board(options: { cursor?: string; take?: number } = {}): Promise<{
     rows: BoardRow[];
     nextCursor: string | null;
-    priceToBeatNumber1: number;
+    leaderVotes: number | null;
   }> {
     const take = Math.min(options.take ?? 50, 100);
     const listings = await this.db.listing.findMany({
@@ -59,7 +42,7 @@ export class ListingService {
     });
     const hasMore = listings.length > take;
     const page = listings.slice(0, take);
-    const leaderTotal = await this.ranks.leaderTotal();
+    const leaderVotes = await this.ranks.leaderVotes();
     const baseRank = options.cursor
       ? await this.ranks.rankOf(await this.mustGet(options.cursor))
       : 0;
@@ -70,15 +53,14 @@ export class ListingService {
         title: listing.title,
         description: listing.description,
         targetUrl: listing.targetUrl,
-        totalBid: listing.totalBid,
+        votes: listing.votes,
         clicks: listing.clicks,
-        firstBidAt: listing.firstBidAt,
-        lastRaiseAt: listing.lastRaiseAt,
+        listedAt: listing.listedAt,
+        lastVoteAt: listing.lastVoteAt,
         verified: listing.owner.claimedAt !== null,
-        minRaise: listing.totalBid + 1,
       })),
       nextCursor: hasMore ? page[page.length - 1].id : null,
-      priceToBeatNumber1: this.pricing.priceToBeatNumber1(leaderTotal),
+      leaderVotes,
     };
   }
 
@@ -87,17 +69,14 @@ export class ListingService {
       where: { slug },
       include: {
         owner: { select: { name: true, claimedAt: true } },
-        bids: {
+        voteEvents: {
           orderBy: { createdAt: "desc" },
           take: 50,
           select: {
-            amount: true,
-            newTotal: true,
             kind: true,
-            txHash: true,
-            network: true,
-            payerAddress: true,
+            newTotal: true,
             createdAt: true,
+            agent: { select: { name: true } },
           },
         },
       },
@@ -113,94 +92,41 @@ export class ListingService {
     return this.db.listing.findUnique({ where: { targetUrl } });
   }
 
+  async findBySlugOrNull(slug: string): Promise<Listing | null> {
+    return this.db.listing.findUnique({ where: { slug } });
+  }
+
   async countOwnedBy(agentId: string): Promise<number> {
     return this.db.listing.count({ where: { ownerId: agentId } });
   }
 
   /**
-   * Apply a verified (not yet settled) bid atomically. The unique constraint
-   * on `paymentNonce` makes a replayed payment credential a no-op: the
-   * original application is returned with `replayed: true`.
+   * Create a listing. Listing a site is itself the owner's first vote, so the
+   * listing is born with `votes: 1` and a LIST vote row — which also means the
+   * unique (listingId, agentId) constraint stops the owner from upvoting
+   * themselves again later.
    */
-  async applyVerifiedBid(input: ApplyBidInput): Promise<ApplyBidResult> {
-    try {
-      return await this.db.$transaction(async (tx) => {
-        let listing: Listing;
-        if (input.quote.kind === "RAISE") {
-          if (!input.listingId) throw new Error("listingId required for raises");
-          listing = await tx.listing.update({
-            where: { id: input.listingId },
-            data: {
-              totalBid: input.quote.newTotal,
-              lastRaiseAt: new Date(),
-              // owners may refresh their blurb when raising
-              ...(input.target.description !== undefined && input.target.description !== null
-                ? { description: input.target.description }
-                : {}),
-            },
-          });
-        } else {
-          listing = await tx.listing.create({
-            data: {
-              slug: await uniqueSlug(this.db, input.target.title),
-              targetUrl: input.target.url,
-              title: input.target.title,
-              description: input.target.description ?? null,
-              totalBid: input.quote.newTotal,
-              ownerId: input.agentId,
-            },
-          });
-        }
-        const bid = await tx.bid.create({
-          data: {
-            amount: input.quote.charge,
-            newTotal: input.quote.newTotal,
-            kind: input.quote.kind,
-            paymentNonce: input.paymentNonce,
-            network: input.network,
-            payerAddress: input.payerAddress,
-            listingId: listing.id,
-            agentId: input.agentId,
-          },
-        });
-        return { listing, bid, replayed: false };
+  async create(input: CreateListingInput): Promise<Listing> {
+    return this.db.$transaction(async (tx) => {
+      const listing = await tx.listing.create({
+        data: {
+          slug: await uniqueSlug(this.db, input.target.title),
+          targetUrl: input.target.url,
+          title: input.target.title,
+          description: input.target.description ?? null,
+          votes: 1,
+          ownerId: input.agentId,
+        },
       });
-    } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-        const existing = await this.db.bid.findUnique({
-          where: { paymentNonce: input.paymentNonce },
-          include: { listing: true },
-        });
-        if (existing) {
-          return { listing: existing.listing, bid: existing, replayed: true };
-        }
-      }
-      throw err;
-    }
-  }
-
-  /** Record the settlement tx hash once the facilitator confirms. */
-  async markSettled(bidId: string, txHash: string): Promise<void> {
-    await this.db.bid.update({ where: { id: bidId }, data: { txHash } });
-  }
-
-  /**
-   * Compensating transaction when settlement fails: the bid never happened.
-   * New listings are removed entirely; raises are rolled back to the previous
-   * total.
-   */
-  async rollbackBid(result: ApplyBidResult): Promise<void> {
-    await this.db.$transaction(async (tx) => {
-      await tx.bid.delete({ where: { id: result.bid.id } });
-      if (result.bid.kind === "NEW") {
-        await tx.clickEvent.deleteMany({ where: { listingId: result.listing.id } });
-        await tx.listing.delete({ where: { id: result.listing.id } });
-      } else {
-        await tx.listing.update({
-          where: { id: result.listing.id },
-          data: { totalBid: result.listing.totalBid - result.bid.amount },
-        });
-      }
+      await tx.vote.create({
+        data: {
+          kind: "LIST",
+          newTotal: 1,
+          listingId: listing.id,
+          agentId: input.agentId,
+        },
+      });
+      return listing;
     });
   }
 
@@ -246,7 +172,7 @@ export class ListingService {
           slug: listing.slug,
           title: listing.title,
           targetUrl: listing.targetUrl,
-          totalBid: listing.totalBid,
+          votes: listing.votes,
           clicksInWindow: g._count.listingId,
           clicksPerHour: Math.round((g._count.listingId / windowHours) * 100) / 100,
         };

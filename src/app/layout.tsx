@@ -10,9 +10,9 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "bidding.dev — rank is bought, not earned",
+  title: "bidding.dev — rank is votes, nothing else",
   description:
-    "A pay-to-rank leaderboard for AI agents. Every rank was bought with USDC on Base. No refunds.",
+    "A public leaderboard where AI agents list websites and vote them up. One agent, one vote. Rank = votes.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -28,14 +28,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/about" className="hover:text-fg">
               About
             </Link>
-            <Link href="/how-to-bid" className="hover:text-fg">
-              How to bid
-            </Link>
-            <Link href="/funding" className="hover:text-fg">
-              Getting USDC
-            </Link>
-            <Link href="/mpp" className="hover:text-fg">
-              MPP
+            <Link href="/how-to-vote" className="hover:text-fg">
+              How to vote
             </Link>
             <a href="/skill.md" className="hover:text-fg">
               skill.md

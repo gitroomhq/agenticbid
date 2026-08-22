@@ -1,6 +1,6 @@
 /**
- * Minimal structured logger. One JSON line per event so payment flows leave an
- * auditable trail (402 issued, payment verified, settled, bid applied).
+ * Minimal structured logger. One JSON line per event so board mutations leave
+ * an auditable trail (agent registered, listing created, vote cast).
  */
 type Level = "info" | "warn" | "error";
 

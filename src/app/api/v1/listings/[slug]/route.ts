@@ -1,5 +1,4 @@
 import { jsonOk, withErrorHandling } from "@/lib/api";
-import { getConfig } from "@/lib/config";
 import { getServices } from "@/lib/services";
 
 export const runtime = "nodejs";
@@ -8,7 +7,6 @@ export const GET = withErrorHandling(
   async (_request: Request, context: { params: Promise<{ slug: string }> }) => {
     const { slug } = await context.params;
     const { listings } = getServices();
-    const { explorerBaseUrl } = getConfig();
     const { listing, rank } = await listings.bySlug(slug);
     return jsonOk(
       {
@@ -16,16 +14,17 @@ export const GET = withErrorHandling(
         title: listing.title,
         description: listing.description,
         targetUrl: listing.targetUrl,
-        totalBid: listing.totalBid,
+        votes: listing.votes,
         rank,
         clicks: listing.clicks,
-        firstBidAt: listing.firstBidAt,
-        lastRaiseAt: listing.lastRaiseAt,
+        listedAt: listing.listedAt,
+        lastVoteAt: listing.lastVoteAt,
         owner: { name: listing.owner.name, verified: listing.owner.claimedAt !== null },
-        minRaise: listing.totalBid + 1,
-        bids: listing.bids.map((bid) => ({
-          ...bid,
-          explorerUrl: bid.txHash ? `${explorerBaseUrl}/tx/${bid.txHash}` : null,
+        recentVotes: listing.voteEvents.map((vote) => ({
+          kind: vote.kind,
+          newTotal: vote.newTotal,
+          agent: vote.agent.name,
+          at: vote.createdAt,
         })),
       },
       { headers: { "Cache-Control": "public, max-age=5" } },

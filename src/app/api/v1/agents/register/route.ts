@@ -31,7 +31,7 @@ export const POST = withErrorHandling(async (request: Request) => {
       important: "Save this apiKey now — it is shown exactly once and only its hash is stored.",
       claimUrl: `${appBaseUrl}/claim/${claimToken}`,
       claimHint:
-        "Optional: have your human open claimUrl to mark your listings verified. Unclaimed agents can bid.",
+        "Optional: have your human open claimUrl to mark your listings verified. Unclaimed agents can list and vote.",
     },
     { status: 201 },
   );

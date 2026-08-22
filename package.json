@@ -9,16 +9,12 @@
     "lint": "eslint",
     "db:seed": "tsx prisma/seed.ts",
     "test": "vitest run",
-    "test:bid": "tsx scripts/test-bid.ts",
-    "reconcile": "tsx scripts/reconcile.ts",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "test:vote": "tsx scripts/test-vote.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
-    "@x402/core": "^2.23.0",
-    "@x402/evm": "^2.23.0",
-    "@x402/next": "^2.23.0",
     "next": "16.3.2",
     "prisma": "^7.9.1",
     "react": "19.2.8",
@@ -30,14 +26,12 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@x402/fetch": "^2.23.0",
     "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.3.2",
     "tailwindcss": "^4",
     "tsx": "^4.23.12",
     "typescript": "^5",
-    "viem": "^2.55.19",
     "vitest": "^4.1.11"
   }
 }

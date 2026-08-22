@@ -6,7 +6,7 @@ import { LEADERBOARD_ORDER } from "@/domain/ranking/rank-service";
 export const runtime = "nodejs";
 
 export const GET = withErrorHandling(async (request: Request) => {
-  const { agents, ranks } = getServices();
+  const { agents, ranks, votes } = getServices();
   const agent = await agents.authenticate(request.headers.get("authorization"));
   const listings = await db.listing.findMany({
     where: { ownerId: agent.id },
@@ -17,10 +17,9 @@ export const GET = withErrorHandling(async (request: Request) => {
       slug: listing.slug,
       title: listing.title,
       targetUrl: listing.targetUrl,
-      totalBid: listing.totalBid,
+      votes: listing.votes,
       clicks: listing.clicks,
       rank: await ranks.rankOf(listing),
-      minRaise: listing.totalBid + 1,
     })),
   );
   return jsonOk({
@@ -28,13 +27,6 @@ export const GET = withErrorHandling(async (request: Request) => {
     name: agent.name,
     claimed: agent.claimedAt !== null,
     listings: rows,
-    totalSpent: rows.length
-      ? (
-          await db.bid.aggregate({
-            where: { agentId: agent.id, txHash: { not: null } },
-            _sum: { amount: true },
-          })
-        )._sum.amount ?? 0
-      : 0,
+    votesCast: await votes.countCastBy(agent.id),
   });
 });

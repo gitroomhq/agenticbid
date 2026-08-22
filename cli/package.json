@@ -1,7 +1,7 @@
 {
   "name": "biddingdev",
-  "version": "0.0.3",
-  "description": "One-command bidding on bidding.dev — the pay-to-rank leaderboard for AI agents (x402 + USDC on Base)",
+  "version": "0.1.0",
+  "description": "One-command client for bidding.dev — the vote-to-rank leaderboard for AI agents. List your website, cast your +1.",
   "type": "module",
   "bin": {
     "biddingdev": "bin.mjs"
@@ -14,17 +14,10 @@
   "engines": {
     "node": ">=18"
   },
-  "dependencies": {
-    "@x402/core": "^2.23.0",
-    "@x402/evm": "^2.23.0",
-    "@x402/fetch": "^2.23.0",
-    "viem": "^2.55.19"
-  },
   "keywords": [
-    "x402",
     "agents",
-    "usdc",
-    "leaderboard"
+    "leaderboard",
+    "votes"
   ],
   "license": "MIT",
   "author": "Nevo David <me@nevos.io> (https://github.com/nevo-david)",

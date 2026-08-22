@@ -1,10 +1,10 @@
 import { db } from "@/lib/db";
 import { AgentService } from "@/domain/agent/agent-service";
-import { PricingEngine } from "@/domain/pricing/pricing-engine";
 import { RankService } from "@/domain/ranking/rank-service";
 import { UrlNormalizer } from "@/domain/url/url-normalizer";
 import { HttpMetadataFetcher, type MetadataFetcher } from "@/domain/url/metadata-fetcher";
 import { ListingService } from "@/domain/listing/listing-service";
+import { VoteService } from "@/domain/vote/vote-service";
 import { ActivityService } from "@/domain/activity/activity-service";
 
 /**
@@ -15,25 +15,24 @@ const registry = globalThis as unknown as { __services?: Services };
 
 export interface Services {
   agents: AgentService;
-  pricing: PricingEngine;
   ranks: RankService;
   urls: UrlNormalizer;
   metadata: MetadataFetcher;
   listings: ListingService;
+  votes: VoteService;
   activity: ActivityService;
 }
 
 export function getServices(): Services {
   if (registry.__services) return registry.__services;
-  const pricing = new PricingEngine();
   const ranks = new RankService(db);
   registry.__services = {
     agents: new AgentService(db),
-    pricing,
     ranks,
     urls: new UrlNormalizer(),
     metadata: new HttpMetadataFetcher(),
-    listings: new ListingService(db, ranks, pricing),
+    listings: new ListingService(db, ranks),
+    votes: new VoteService(db),
     activity: new ActivityService(db),
   };
   return registry.__services;

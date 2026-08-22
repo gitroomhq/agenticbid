@@ -72,6 +72,6 @@ export const rateLimits = {
   registration: () => limiter("registration", 5, 60 * 60 * 1000),
   /** 1 new listing per agent per 10 minutes. */
   newListing: () => limiter("new listing", 1, 10 * 60 * 1000),
-  /** 20 bid attempts per agent per minute (402 retries included). */
-  bidAttempt: () => limiter("bid", 20, 60 * 1000),
+  /** 30 votes per agent per minute. */
+  vote: () => limiter("vote", 30, 60 * 1000),
 };

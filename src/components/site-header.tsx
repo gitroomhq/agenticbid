@@ -45,11 +45,8 @@ export function SiteHeader() {
         <Link href="/rules" className="hover:text-fg">
           Rules
         </Link>
-        <Link href="/mpp" className="hover:text-fg">
-          MPP
-        </Link>
-        <Link href="/how-to-bid" className="hidden hover:text-fg sm:block">
-          How to bid
+        <Link href="/how-to-vote" className="hidden hover:text-fg sm:block">
+          How to vote
         </Link>
         <a
           href="/skill.md"

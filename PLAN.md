@@ -1,5 +1,10 @@
 # Outbid Clone with x402 Crypto Payments — Build Plan
 
+> **⚠️ SUPERSEDED (2026-08-23):** the product pivoted away from payments entirely.
+> There is no bidding, no x402, no USDC — rank is now **vote count**: agents list
+> websites for free and each agent gets one +1 per listing. See CLAUDE.md §1.1
+> for the current spec. This document is kept as history of the original build.
+
 A pay-to-rank leaderboard (clone of [outbid.lol](https://outbid.lol/)) where **AI agents are first-class customers**: instead of Stripe Checkout, payments happen over **x402** (the HTTP 402 payment protocol) with **USDC settled directly to our own wallet** — no Stripe, no payment-processor account — and agents learn how to bid by reading a public **`skill.md`** (the [moltbook.com](https://www.moltbook.com/) pattern).
 
 **Stack:** Next.js (App Router) · Tailwind CSS · Prisma · PostgreSQL · x402 v2 (`@x402/core` + `@x402/next`) · USDC on Base (Base Sepolia for dev).

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { formatUsd, timeAgo } from "@/lib/format";
+import { formatVotes, timeAgo } from "@/lib/format";
 import { SiteIcon } from "@/components/site-icon";
 
 export interface BoardRow {
@@ -10,19 +10,17 @@ export interface BoardRow {
   title: string;
   description: string | null;
   targetUrl: string;
-  totalBid: number;
+  votes: number;
   clicks: number;
-  firstBidAt: string;
+  listedAt: string;
   verified: boolean;
 }
 
 export interface ActivityRow {
-  kind: "NEW" | "RAISE";
-  amount: number;
+  kind: "LIST" | "UPVOTE";
   newTotal: number;
   listing: { slug: string; title: string; targetUrl: string };
   agent: string;
-  explorerUrl: string | null;
   at: string;
 }
 
@@ -30,13 +28,13 @@ export interface TrendingRow {
   slug: string;
   title: string;
   targetUrl: string;
-  totalBid: number;
+  votes: number;
   clicksPerHour: number;
 }
 
 export interface BoardData {
   rows: BoardRow[];
-  priceToBeatNumber1: number;
+  leaderVotes: number | null;
   activity: ActivityRow[];
   trending: TrendingRow[];
 }
@@ -52,7 +50,7 @@ async function fetchBoard(): Promise<BoardData | null> {
     ]);
     return {
       rows: listings.rows ?? [],
-      priceToBeatNumber1: listings.priceToBeatNumber1 ?? 5,
+      leaderVotes: listings.leaderVotes ?? null,
       activity: activity.rows ?? [],
       trending: trending.rows ?? [],
     };
@@ -61,7 +59,7 @@ async function fetchBoard(): Promise<BoardData | null> {
   }
 }
 
-/** outbid-style emphasis: #1 strong accent, #2 faint, #3 barely, rest plain. */
+/** outvote-style emphasis: #1 strong accent, #2 faint, #3 barely, rest plain. */
 function cardStyle(rank: number): { className: string; style?: React.CSSProperties } {
   if (rank === 1)
     return {
@@ -150,7 +148,7 @@ export function LiveBoard({ initial }: { initial: BoardData }) {
                   >
                     {row.targetUrl.replace(/^https:\/\//, "")}
                   </a>
-                  <span className="hidden sm:inline">{timeAgo(row.firstBidAt)}</span>
+                  <span className="hidden sm:inline">{timeAgo(row.listedAt)}</span>
                   <span className="hidden items-center gap-1 sm:inline-flex">
                     <span className="inline-block size-1.5 rounded-full bg-accent" />
                     <strong className="font-semibold text-fg">
@@ -161,14 +159,14 @@ export function LiveBoard({ initial }: { initial: BoardData }) {
                 </p>
               </div>
               <p className="font-money shrink-0 text-lg font-bold text-accent sm:text-xl">
-                {formatUsd(row.totalBid)}
+                {formatVotes(row.votes)}
               </p>
             </article>
           );
         })}
         {data.rows.length === 0 && (
           <p className="rounded-[25px] border border-dashed border-line p-10 text-center text-muted">
-            The board is empty. The first $5 bid takes #1.
+            The board is empty. The first listing takes #1 with a single vote.
           </p>
         )}
       </section>
@@ -225,27 +223,15 @@ function ActivityPanel({ rows }: { rows: ActivityRow[] }) {
                 {row.listing.title}
               </a>{" "}
               <span className="text-muted">
-                {row.kind === "NEW" ? "listed" : "raised"} · {formatUsd(row.newTotal)}
+                {row.kind === "LIST" ? "listed" : `+1 by ${row.agent}`} ·{" "}
+                {formatVotes(row.newTotal)}
               </span>
-              {row.explorerUrl && (
-                <>
-                  {" "}
-                  <a
-                    href={row.explorerUrl}
-                    target="_blank"
-                    rel="noopener"
-                    className="text-settle hover:underline"
-                  >
-                    tx↗
-                  </a>
-                </>
-              )}
             </p>
             <span className="shrink-0 text-xs text-muted">{timeAgo(row.at)}</span>
           </li>
         ))}
         {rows.length === 0 && (
-          <li className="py-2 text-sm text-muted">No settled bids yet. Be the first.</li>
+          <li className="py-2 text-sm text-muted">No votes yet. Be the first.</li>
         )}
       </ul>
     </section>

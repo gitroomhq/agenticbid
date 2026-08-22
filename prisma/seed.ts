@@ -30,24 +30,32 @@ const FAKE_PRODUCTS = [
   ["Inbox Hero", "Reach inbox zero with an AI triage sidekick.", "https://inboxhero.app"],
 ] as const;
 
-async function main() {
-  const apiKey = `ab_seed_${randomBytes(16).toString("hex")}`;
-  const agent = await db.agent.upsert({
-    where: { apiKeyHash: createHash("sha256").update("seed-agent").digest("hex") },
+async function seedAgent(name: string) {
+  return db.agent.upsert({
+    where: { apiKeyHash: createHash("sha256").update(name).digest("hex") },
     update: {},
     create: {
-      name: "seed-agent",
-      apiKeyHash: createHash("sha256").update("seed-agent").digest("hex"),
+      name,
+      apiKeyHash: createHash("sha256").update(name).digest("hex"),
       claimToken: randomBytes(16).toString("hex"),
       claimedAt: new Date(),
     },
   });
+}
+
+async function main() {
+  const owner = await seedAgent("seed-agent");
+  // a pool of voter agents to hand out upvotes from
+  const maxVotes = 40;
+  const voters = await Promise.all(
+    Array.from({ length: maxVotes }, (_, i) => seedAgent(`seed-voter-${i + 1}`)),
+  );
 
   const now = Date.now();
   for (let i = 0; i < FAKE_PRODUCTS.length; i++) {
     const [title, description, targetUrl] = FAKE_PRODUCTS[i];
-    const totalBid = Math.max(5, Math.round(500 / (i + 1)));
-    const firstBidAt = new Date(now - (i + 1) * 3_600_000 * 6);
+    const votes = Math.max(1, Math.round(maxVotes / (i + 1)));
+    const listedAt = new Date(now - (i + 1) * 3_600_000 * 6);
     const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
     const listing = await db.listing.upsert({
       where: { targetUrl },
@@ -57,23 +65,26 @@ async function main() {
         targetUrl,
         title,
         description,
-        totalBid,
-        firstBidAt,
-        lastRaiseAt: firstBidAt,
+        votes,
+        listedAt,
+        lastVoteAt: listedAt,
         clicks: Math.floor(Math.random() * 400),
-        ownerId: agent.id,
-        bids: {
-          create: {
-            amount: totalBid,
-            newTotal: totalBid,
-            kind: "NEW",
-            paymentNonce: `0xseed${randomBytes(28).toString("hex")}`,
-            txHash: `0xseedtx${randomBytes(28).toString("hex")}`,
-            network: "base-sepolia",
-            payerAddress: "0x0000000000000000000000000000000000000001",
-            agentId: agent.id,
-            createdAt: firstBidAt,
-          },
+        ownerId: owner.id,
+        voteEvents: {
+          create: [
+            {
+              kind: "LIST",
+              newTotal: 1,
+              agentId: owner.id,
+              createdAt: listedAt,
+            },
+            ...voters.slice(0, votes - 1).map((voter, v) => ({
+              kind: "UPVOTE" as const,
+              newTotal: v + 2,
+              agentId: voter.id,
+              createdAt: new Date(listedAt.getTime() + (v + 1) * 600_000),
+            })),
+          ],
         },
       },
     });
@@ -88,7 +99,7 @@ async function main() {
       });
     }
   }
-  console.log(`Seeded ${FAKE_PRODUCTS.length} listings (agent key: ${apiKey} — hash not stored, seed agent is claim-only)`);
+  console.log(`Seeded ${FAKE_PRODUCTS.length} listings with votes from ${maxVotes + 1} seed agents.`);
 }
 
 main()

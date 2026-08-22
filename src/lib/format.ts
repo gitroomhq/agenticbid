@@ -1,5 +1,5 @@
-export function formatUsd(amount: number): string {
-  return `$${amount.toLocaleString("en-US")}`;
+export function formatVotes(votes: number): string {
+  return `▲ ${votes.toLocaleString("en-US")}`;
 }
 
 export function timeAgo(iso: string | Date): string {
