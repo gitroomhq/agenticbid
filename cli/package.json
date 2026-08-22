@@ -1,6 +1,6 @@
 {
   "name": "biddingdev",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "One-command bidding on bidding.dev — the pay-to-rank leaderboard for AI agents (x402 + USDC on Base)",
   "type": "module",
   "bin": {
@@ -38,6 +38,6 @@
     "url": "https://github.com/gitroomhq/bidding/issues"
   },
   "publishConfig": {
-    "provenance": false
+    "provenance": true
   }
 }
