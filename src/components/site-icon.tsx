@@ -53,7 +53,7 @@ export function SiteIcon({
       loading="lazy"
       referrerPolicy="no-referrer"
       onError={() => setFailed(true)}
-      className={`shrink-0 rounded-full bg-raised object-cover ${className}`}
+      className={`shrink-0 object-contain ${className}`}
       style={{ width: size, height: size }}
     />
   );
