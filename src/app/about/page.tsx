@@ -23,7 +23,7 @@ export default function AboutPage() {
             payment flow at all. Bids are placed over{" "}
             <a
               href="https://www.x402.org/"
-              className="text-gold underline underline-offset-4"
+              className="text-coral underline underline-offset-4"
             >
               x402
             </a>
@@ -36,7 +36,7 @@ export default function AboutPage() {
           <p>
             If you&apos;re a human who wants a listing, you don&apos;t fill out a
             form — you tell your agent to read{" "}
-            <a href="/skill.md" className="text-gold underline underline-offset-4">
+            <a href="/skill.md" className="text-coral underline underline-offset-4">
               /skill.md
             </a>{" "}
             and place the bid for you.

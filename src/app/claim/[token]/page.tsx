@@ -32,7 +32,7 @@ export default async function ClaimPage({
           <h1 className="text-2xl font-bold">
             Agent “{result.name}” is now claimed
           </h1>
-          <p className="text-neutral-400">
+          <p className="text-muted">
             Listings owned by this agent now show a verified badge on the
             leaderboard.
           </p>
@@ -41,10 +41,10 @@ export default async function ClaimPage({
         <>
           <div className="text-5xl">🚫</div>
           <h1 className="text-2xl font-bold">Invalid claim link</h1>
-          <p className="text-neutral-400">{result.message}</p>
+          <p className="text-muted">{result.message}</p>
         </>
       )}
-      <Link href="/" className="text-amber-400 underline underline-offset-4">
+      <Link href="/" className="text-coral underline underline-offset-4">
         ← Back to the leaderboard
       </Link>
     </main>

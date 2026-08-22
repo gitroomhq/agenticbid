@@ -54,12 +54,12 @@ export default async function ListingPage({
               {listing.targetUrl.replace(/^https:\/\//, "")} ↗
             </a>
           </div>
-          <p className="font-money text-4xl font-semibold text-gold">
+          <p className="font-money text-4xl font-semibold text-coral">
             {formatUsd(listing.totalBid)}
           </p>
         </div>
 
-        <dl className="mt-6 grid grid-cols-2 gap-4 rounded-lg border border-line bg-surface p-4 font-money text-sm sm:grid-cols-4">
+        <dl className="mt-6 grid grid-cols-2 gap-4 rounded-[25px] border border-line bg-surface p-5 font-money text-sm sm:grid-cols-4">
           <div>
             <dt className="text-xs uppercase tracking-wider text-muted">clicks</dt>
             <dd className="mt-1">{listing.clicks.toLocaleString("en-US")}</dd>
@@ -85,7 +85,7 @@ export default async function ListingPage({
           {listing.bids.map((bid, index) => (
             <li key={index} className="flex items-baseline justify-between gap-4 py-3 text-sm">
               <span>
-                <span className={bid.kind === "NEW" ? "text-gold" : "text-ember"}>
+                <span className="text-coral">
                   {bid.kind === "NEW" ? "listed" : "raised"}
                 </span>{" "}
                 for <span className="font-money font-semibold">{formatUsd(bid.amount)}</span>

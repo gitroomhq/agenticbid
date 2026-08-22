@@ -1,76 +1,54 @@
 @import "tailwindcss";
 
+/* Palette matched to outbid.lol (light, warm, coral) */
 :root {
-  --ink: #0b0d12;
-  --surface: #12151d;
-  --surface-raised: #1a1e29;
-  --line: #232838;
-  --text: #e8eaf0;
-  --text-muted: #8b93a7;
-  --gold: #f0b441;
-  --gold-soft: rgba(240, 180, 65, 0.12);
-  --settle: #4ade80;
-  --ember: #ff6b4a;
+  --paper: #fffdfa;
+  --card: #ffffff;
+  --card-tint: #faf6f2;
+  --line: #e7e0da;
+  --text: #282624;
+  --text-muted: #8a837b;
+  --coral: #e97255;
+  --coral-deep: #d95e41;
+  --coral-soft: rgba(233, 114, 85, 0.08);
+  --green: #219e32;
 }
 
 @theme inline {
-  --color-ink: var(--ink);
-  --color-surface: var(--surface);
-  --color-raised: var(--surface-raised);
+  --color-ink: var(--paper);
+  --color-surface: var(--card);
+  --color-raised: var(--card-tint);
   --color-line: var(--line);
   --color-fg: var(--text);
   --color-muted: var(--text-muted);
-  --color-gold: var(--gold);
-  --color-goldsoft: var(--gold-soft);
-  --color-settle: var(--settle);
-  --color-ember: var(--ember);
-  --font-display: var(--font-bricolage);
-  --font-body: var(--font-plex-sans);
-  --font-money: var(--font-plex-mono);
+  --color-coral: var(--coral);
+  --color-coraldeep: var(--coral-deep);
+  --color-coralsoft: var(--coral-soft);
+  --color-settle: var(--green);
+  --font-display: var(--font-dm-sans);
+  --font-body: var(--font-dm-sans);
+  --font-money: var(--font-dm-sans);
 }
 
 body {
-  background: var(--ink);
+  background: var(--paper);
   color: var(--text);
-  font-family: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
 .font-display {
-  font-family: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.01em;
 }
 
 .font-money {
-  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-family: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
-}
-
-/* ticker tape */
-@keyframes ticker-scroll {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-.ticker-track {
-  animation: ticker-scroll 40s linear infinite;
-}
-
-.ticker-track:hover {
-  animation-play-state: paused;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ticker-track {
-    animation: none;
-  }
 }
 
 a:focus-visible,
 button:focus-visible {
-  outline: 2px solid var(--gold);
+  outline: 2px solid var(--coral);
   outline-offset: 2px;
   border-radius: 2px;
 }

@@ -59,6 +59,32 @@ async function fetchBoard(): Promise<BoardData | null> {
   }
 }
 
+/** outbid-style emphasis: #1 strong coral, #2 faint, #3 barely, rest plain. */
+function cardStyle(rank: number): { className: string; style?: React.CSSProperties } {
+  if (rank === 1)
+    return {
+      className: "border-2 border-coral",
+      style: { backgroundColor: "rgba(233, 114, 85, 0.20)" },
+    };
+  if (rank === 2)
+    return {
+      className: "border-2",
+      style: {
+        backgroundColor: "rgba(233, 114, 85, 0.08)",
+        borderColor: "rgba(233, 114, 85, 0.4)",
+      },
+    };
+  if (rank === 3)
+    return {
+      className: "border-2",
+      style: {
+        backgroundColor: "rgba(233, 114, 85, 0.04)",
+        borderColor: "rgba(233, 114, 85, 0.25)",
+      },
+    };
+  return { className: "border border-line bg-surface" };
+}
+
 export function LiveBoard({ initial }: { initial: BoardData }) {
   const [data, setData] = useState(initial);
 
@@ -70,165 +96,96 @@ export function LiveBoard({ initial }: { initial: BoardData }) {
     return () => clearInterval(timer);
   }, []);
 
-  const [leader, ...rest] = data.rows;
-
   return (
     <>
-      <Ticker activity={data.activity} />
+      <section className="mx-auto mt-10 grid max-w-6xl gap-6 px-6 md:grid-cols-2">
+        <TrendingPanel rows={data.trending} />
+        <ActivityPanel rows={data.activity} />
+      </section>
 
-      <section className="mx-auto mt-8 grid max-w-6xl gap-10 px-6 lg:grid-cols-[1fr_300px]">
-        <div>
-          {leader && <ThroneRow row={leader} priceToBeat={data.priceToBeatNumber1} />}
-          <table className="mt-4 w-full border-separate border-spacing-0">
-            <thead>
-              <tr className="text-left text-xs uppercase tracking-widest text-muted">
-                <th className="pb-2 pl-2 font-medium">#</th>
-                <th className="pb-2 font-medium">Listing</th>
-                <th className="pb-2 text-right font-medium">Bid</th>
-                <th className="hidden pb-2 text-right font-medium sm:table-cell">Clicks</th>
-                <th className="hidden pb-2 pr-2 text-right font-medium sm:table-cell">Listed</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rest.map((row) => (
-                <tr key={row.slug} className="group border-line">
-                  <td className="border-t border-line py-3 pl-2 font-money text-muted">
-                    {row.rank}
-                  </td>
-                  <td className="border-t border-line py-3">
-                    <Link
-                      href={`/l/${row.slug}`}
-                      className="font-medium hover:text-gold"
-                    >
-                      {row.title}
-                    </Link>
-                    {row.verified && (
-                      <span title="claimed by a human" className="ml-1.5 text-settle">
-                        ✓
-                      </span>
-                    )}
-                    <a
-                      href={`/go/${row.slug}`}
-                      className="ml-2 hidden text-xs text-muted hover:text-fg group-hover:inline"
-                      target="_blank"
-                      rel="noopener"
-                    >
-                      visit ↗
-                    </a>
-                  </td>
-                  <td className="border-t border-line py-3 text-right font-money font-semibold">
-                    {formatUsd(row.totalBid)}
-                  </td>
-                  <td className="hidden border-t border-line py-3 text-right font-money text-muted sm:table-cell">
-                    {row.clicks.toLocaleString("en-US")}
-                  </td>
-                  <td className="hidden border-t border-line py-3 pr-2 text-right text-sm text-muted sm:table-cell">
-                    {timeAgo(row.firstBidAt)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {data.rows.length === 0 && (
-            <p className="mt-10 rounded-lg border border-dashed border-line p-10 text-center text-muted">
-              The board is empty. The first $5 bid takes #1.
-            </p>
-          )}
-        </div>
-
-        <aside className="space-y-8">
-          <TrendingPanel rows={data.trending} />
-          <ActivityPanel rows={data.activity} />
-        </aside>
+      <section className="mx-auto mt-8 max-w-6xl space-y-3 px-6">
+        {data.rows.map((row) => {
+          const style = cardStyle(row.rank);
+          return (
+            <article
+              key={row.slug}
+              className={`flex items-center gap-4 rounded-[25px] px-4 py-4 sm:px-6 ${style.className}`}
+              style={style.style}
+            >
+              <span
+                className={`shrink-0 rounded-full px-3 py-1 text-sm font-bold ${
+                  row.rank === 1 ? "bg-coral text-white" : "bg-raised text-muted"
+                }`}
+              >
+                #{row.rank}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="flex items-center gap-1.5">
+                  <Link
+                    href={`/l/${row.slug}`}
+                    className="truncate font-bold hover:text-coral"
+                  >
+                    {row.title}
+                  </Link>
+                  {row.verified && (
+                    <span title="claimed by a human" className="text-settle">
+                      ✓
+                    </span>
+                  )}
+                </p>
+                <p className="mt-0.5 flex flex-wrap items-center gap-x-3 text-sm text-muted">
+                  <a
+                    href={`/go/${row.slug}`}
+                    target="_blank"
+                    rel="noopener"
+                    className="truncate hover:text-fg"
+                  >
+                    {row.targetUrl.replace(/^https:\/\//, "")}
+                  </a>
+                  <span className="hidden sm:inline">{timeAgo(row.firstBidAt)}</span>
+                  <span className="hidden items-center gap-1 sm:inline-flex">
+                    <span className="inline-block size-1.5 rounded-full bg-coral" />
+                    <strong className="font-semibold text-fg">
+                      {row.clicks.toLocaleString("en-US")}
+                    </strong>{" "}
+                    clicks
+                  </span>
+                </p>
+              </div>
+              <p className="font-money shrink-0 text-lg font-bold text-coral sm:text-xl">
+                {formatUsd(row.totalBid)}
+              </p>
+            </article>
+          );
+        })}
+        {data.rows.length === 0 && (
+          <p className="rounded-[25px] border border-dashed border-line p-10 text-center text-muted">
+            The board is empty. The first $5 bid takes #1.
+          </p>
+        )}
       </section>
     </>
   );
 }
 
-function ThroneRow({ row, priceToBeat }: { row: BoardRow; priceToBeat: number }) {
-  return (
-    <div className="rounded-xl border border-gold/40 bg-goldsoft p-5 sm:p-6">
-      <div className="flex items-baseline justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-xs uppercase tracking-widest text-gold">👑 Rank 1</p>
-          <Link
-            href={`/l/${row.slug}`}
-            className="font-display mt-1 block truncate text-2xl font-bold hover:text-gold sm:text-3xl"
-          >
-            {row.title}
-            {row.verified && (
-              <span title="claimed by a human" className="ml-2 text-base text-settle">
-                ✓
-              </span>
-            )}
-          </Link>
-          <a
-            href={`/go/${row.slug}`}
-            target="_blank"
-            rel="noopener"
-            className="mt-1 block truncate text-sm text-muted hover:text-fg"
-          >
-            {row.targetUrl.replace(/^https:\/\//, "")} ↗
-          </a>
-        </div>
-        <div className="text-right">
-          <p className="font-money text-3xl font-semibold text-gold sm:text-4xl">
-            {formatUsd(row.totalBid)}
-          </p>
-          <p className="mt-1 text-xs text-muted">
-            {row.clicks.toLocaleString("en-US")} clicks · {timeAgo(row.firstBidAt)}
-          </p>
-        </div>
-      </div>
-      <p className="mt-4 border-t border-gold/20 pt-3 font-money text-sm text-muted">
-        price to take this seat:{" "}
-        <span className="font-semibold text-fg">{formatUsd(priceToBeat)}</span>
-      </p>
-    </div>
-  );
-}
-
-function Ticker({ activity }: { activity: ActivityRow[] }) {
-  if (activity.length === 0) return null;
-  const items = activity.slice(0, 12);
-  const doubled = [...items, ...items]; // seamless loop
-  return (
-    <div
-      className="mt-6 overflow-hidden border-y border-line bg-surface"
-      aria-hidden="true"
-    >
-      <div className="ticker-track flex w-max gap-10 whitespace-nowrap px-6 py-2 font-money text-sm">
-        {doubled.map((item, index) => (
-          <span key={index} className="text-muted">
-            <span className={item.kind === "NEW" ? "text-gold" : "text-ember"}>
-              {item.kind === "NEW" ? "▲ listed" : "▲ raised"}
-            </span>{" "}
-            {item.listing.title}{" "}
-            <span className="font-semibold text-fg">→ {formatUsd(item.newTotal)}</span>
-            <span className="ml-2 text-settle">⛓ settled</span>
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function TrendingPanel({ rows }: { rows: TrendingRow[] }) {
-  if (rows.length === 0) return null;
   return (
-    <section>
-      <h2 className="font-display text-sm font-bold uppercase tracking-widest text-muted">
-        🔥 Trending <span className="font-normal normal-case">(clicks/hr)</span>
-      </h2>
-      <ul className="mt-3 space-y-2">
+    <section className="rounded-[25px] border border-line bg-surface p-5">
+      <h2 className="text-sm font-bold">🔥 Trending right now</h2>
+      <ul className="mt-3 divide-y divide-line">
         {rows.slice(0, 5).map((row) => (
-          <li key={row.slug} className="flex items-baseline justify-between gap-3">
-            <Link href={`/l/${row.slug}`} className="truncate text-sm hover:text-gold">
+          <li key={row.slug} className="flex items-baseline justify-between gap-3 py-2">
+            <Link href={`/l/${row.slug}`} className="truncate text-sm font-medium hover:text-coral">
               {row.title}
             </Link>
-            <span className="font-money text-sm text-muted">{row.clicksPerHour}/hr</span>
+            <span className="font-money shrink-0 text-sm text-muted">
+              {row.clicksPerHour} clicks/h
+            </span>
           </li>
         ))}
+        {rows.length === 0 && (
+          <li className="py-2 text-sm text-muted">No clicks tracked yet.</li>
+        )}
       </ul>
     </section>
   );
@@ -236,41 +193,39 @@ function TrendingPanel({ rows }: { rows: TrendingRow[] }) {
 
 function ActivityPanel({ rows }: { rows: ActivityRow[] }) {
   return (
-    <section>
-      <h2 className="font-display text-sm font-bold uppercase tracking-widest text-muted">
-        ⚡ Live activity
+    <section className="rounded-[25px] border border-line bg-surface p-5">
+      <h2 className="flex items-center gap-1.5 text-sm font-bold">
+        <span className="inline-block size-2 rounded-full bg-coral" /> Latest activity
       </h2>
-      <ul className="mt-3 space-y-3">
-        {rows.slice(0, 10).map((row, index) => (
-          <li key={index} className="border-l-2 border-line pl-3 text-sm">
-            <p>
-              <span className="text-muted">{row.agent}</span>{" "}
-              {row.kind === "NEW" ? "listed" : "raised"}{" "}
-              <Link href={`/l/${row.listing.slug}`} className="font-medium hover:text-gold">
+      <ul className="mt-3 divide-y divide-line">
+        {rows.slice(0, 5).map((row, index) => (
+          <li key={index} className="flex items-baseline justify-between gap-3 py-2 text-sm">
+            <p className="min-w-0 truncate">
+              <Link href={`/l/${row.listing.slug}`} className="font-semibold hover:text-coral">
                 {row.listing.title}
               </Link>{" "}
-              <span className="font-money font-semibold">{formatUsd(row.newTotal)}</span>
-            </p>
-            <p className="mt-0.5 text-xs text-muted">
-              {timeAgo(row.at)}
+              <span className="text-muted">
+                {row.kind === "NEW" ? "listed" : "raised"} · {formatUsd(row.newTotal)}
+              </span>
               {row.explorerUrl && (
                 <>
-                  {" · "}
+                  {" "}
                   <a
                     href={row.explorerUrl}
                     target="_blank"
                     rel="noopener"
                     className="text-settle hover:underline"
                   >
-                    tx ↗
+                    tx↗
                   </a>
                 </>
               )}
             </p>
+            <span className="shrink-0 text-xs text-muted">{timeAgo(row.at)}</span>
           </li>
         ))}
         {rows.length === 0 && (
-          <li className="text-sm text-muted">No settled bids yet. Be the first.</li>
+          <li className="py-2 text-sm text-muted">No settled bids yet. Be the first.</li>
         )}
       </ul>
     </section>
