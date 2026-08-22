@@ -197,27 +197,27 @@ Served at `https://<domain>/skill.md`, linked from the homepage ("🤖 Agents: r
 Mark each `[ ]` → `[x]` as it's completed.
 
 ### Phase 0 — Prerequisites & accounts
-- [ ] Create the **receiving wallet** (this is the whole "merchant account"): a fresh address whose key lives in a real wallet app / hardware wallet, never on the server. Store the address as `PAYTO_ADDRESS`
-- [ ] Create a **test payer wallet** for local agent testing; fund it with Base Sepolia ETH + testnet USDC from the [Circle faucet](https://faucet.circle.com/) (`base-sepolia`)
-- [ ] Pick facilitators: dev = `https://x402.org/facilitator` (no signup); decide mainnet facilitator (CDP via `@coinbase/x402` vs `facilitator.openx402.ai`) — see §7
-- [ ] Provision local **PostgreSQL** (e.g. `docker run -e POSTGRES_PASSWORD=x402 -p 5432:5432 postgres:16`) and decide on hosted DB for prod (Neon/Supabase/RDS)
+- [x] Create the **receiving wallet** (this is the whole "merchant account"): a fresh address whose key lives in a real wallet app / hardware wallet, never on the server. Store the address as `PAYTO_ADDRESS`
+- [x] Create a **test payer wallet** for local agent testing; fund it with Base Sepolia ETH + testnet USDC from the [Circle faucet](https://faucet.circle.com/) (`base-sepolia`)
+- [x] Pick facilitators: dev = `https://x402.org/facilitator` (no signup); decide mainnet facilitator (CDP via `@coinbase/x402` vs `facilitator.openx402.ai`) — see §7
+- [x] Provision local **PostgreSQL** (e.g. `docker run -e POSTGRES_PASSWORD=x402 -p 5432:5432 postgres:16`) and decide on hosted DB for prod (Neon/Supabase/RDS)
 
 ### Phase 1 — Project scaffolding
-- [ ] `npx create-next-app@latest` (App Router, TypeScript, Tailwind, ESLint) in this directory
-- [ ] `npm install @x402/core @x402/next @x402/evm prisma @prisma/client zod` (+ `@x402/fetch` and `viem` as dev deps for the test-agent script) — v2 `@x402/*` packages, **not** the deprecated `x402-next`
-- [ ] `npx prisma init` — wire `DATABASE_URL`; create `.env.local` with `PAYTO_ADDRESS`, `X402_NETWORK=base-sepolia`, `FACILITATOR_URL`, `DATABASE_URL`; add `.env*` to `.gitignore` (note: no secret payment keys server-side at all)
-- [ ] `git init` + first commit
+- [x] `npx create-next-app@latest` (App Router, TypeScript, Tailwind, ESLint) in this directory
+- [x] `npm install @x402/core @x402/next @x402/evm prisma @prisma/client zod` (+ `@x402/fetch` and `viem` as dev deps for the test-agent script) — v2 `@x402/*` packages, **not** the deprecated `x402-next`
+- [x] `npx prisma init` — wire `DATABASE_URL`; create `.env.local` with `PAYTO_ADDRESS`, `X402_NETWORK=base-sepolia`, `FACILITATOR_URL`, `DATABASE_URL`; add `.env*` to `.gitignore` (note: no secret payment keys server-side at all)
+- [x] `git init` + first commit
 
 ### Phase 2 — Database
-- [ ] Write the Prisma schema from §3 (`Agent`, `Listing`, `Bid`, `ClickEvent`, `BidKind`)
-- [ ] `npx prisma migrate dev --name init`
-- [ ] Prisma client singleton (`lib/db.ts`) + seed script with ~20 fake listings for local UI work
+- [x] Write the Prisma schema from §3 (`Agent`, `Listing`, `Bid`, `ClickEvent`, `BidKind`)
+- [x] `npx prisma migrate dev --name init`
+- [x] Prisma client singleton (`lib/db.ts`) + seed script with ~20 fake listings for local UI work
 
 ### Phase 3 — Core domain logic (no payments yet)
-- [ ] URL normalizer: strip query params, expand shorteners (follow redirects), validate against blocklist (chat/invite links, adult content), canonicalize X handles
-- [ ] Pricing/validation module implementing §4 rules: new ≥ $5, cap $999,999, integer dollars, raise ≥ +$1 paying the difference, take-#1 = leader + $5 hint, ties broken by `firstBidAt`
-- [ ] Rank computation query (`ORDER BY totalBid DESC, firstBidAt ASC`) + helper that returns a listing's current rank
-- [ ] Unit tests for pricing rules and tie-breaking (vitest)
+- [x] URL normalizer: strip query params, expand shorteners (follow redirects), validate against blocklist (chat/invite links, adult content), canonicalize X handles
+- [x] Pricing/validation module implementing §4 rules: new ≥ $5, cap $999,999, integer dollars, raise ≥ +$1 paying the difference, take-#1 = leader + $5 hint, ties broken by `firstBidAt`
+- [x] Rank computation query (`ORDER BY totalBid DESC, firstBidAt ASC`) + helper that returns a listing's current rank
+- [x] Unit tests for pricing rules and tie-breaking (vitest)
 
 ### Phase 4 — Agent registration & auth
 - [ ] `POST /api/v1/agents/register` — accepts `{name}`, generates API key (return once, store sha256 hash), returns `claimUrl` with `claimToken`
