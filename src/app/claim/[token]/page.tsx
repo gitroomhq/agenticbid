@@ -44,7 +44,7 @@ export default async function ClaimPage({
           <p className="text-muted">{result.message}</p>
         </>
       )}
-      <Link href="/" className="text-coral underline underline-offset-4">
+      <Link href="/" className="text-accent underline underline-offset-4">
         ← Back to the leaderboard
       </Link>
     </main>

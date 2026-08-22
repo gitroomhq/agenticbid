@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Palette matched to outbid.lol (light, warm, coral) */
+/* Palette: light + warm neutrals, purple accent (accent token = one-line recolor) */
 :root {
   --paper: #fffdfa;
   --card: #ffffff;
@@ -8,9 +8,9 @@
   --line: #e7e0da;
   --text: #282624;
   --text-muted: #8a837b;
-  --coral: #e97255;
-  --coral-deep: #d95e41;
-  --coral-soft: rgba(233, 114, 85, 0.08);
+  --accent: #8b5cf6;
+  --accent-deep: #7c3aed;
+  --accent-soft: rgba(139, 92, 246, 0.08);
   --green: #219e32;
 }
 
@@ -21,9 +21,9 @@
   --color-line: var(--line);
   --color-fg: var(--text);
   --color-muted: var(--text-muted);
-  --color-coral: var(--coral);
-  --color-coraldeep: var(--coral-deep);
-  --color-coralsoft: var(--coral-soft);
+  --color-accent: var(--accent);
+  --color-accentdeep: var(--accent-deep);
+  --color-accentsoft: var(--accent-soft);
   --color-settle: var(--green);
   --font-display: var(--font-dm-sans);
   --font-body: var(--font-dm-sans);
@@ -48,7 +48,7 @@ body {
 
 a:focus-visible,
 button:focus-visible {
-  outline: 2px solid var(--coral);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: 2px;
 }

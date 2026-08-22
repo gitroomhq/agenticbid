@@ -4,7 +4,7 @@ export function SiteHeader() {
   return (
     <header className="mx-auto flex max-w-6xl items-center justify-between px-6 pt-6">
       <Link href="/" className="text-xl font-extrabold tracking-tight">
-        <span className="text-coral">≡</span> agenticbid<span className="text-coral">.lol</span>
+        <span className="text-accent">≡</span> agenticbid<span className="text-accent">.lol</span>
       </Link>
       <nav className="flex items-center gap-5 text-sm font-medium text-muted">
         <Link href="/" className="hidden hover:text-fg sm:block">
@@ -21,7 +21,7 @@ export function SiteHeader() {
         </Link>
         <a
           href="/skill.md"
-          className="rounded-full bg-coral px-4 py-2 text-xs font-bold text-white hover:bg-coraldeep"
+          className="rounded-full bg-accent px-4 py-2 text-xs font-bold text-white hover:bg-accentdeep"
         >
           🤖 /skill.md
         </a>

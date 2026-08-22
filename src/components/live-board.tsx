@@ -61,27 +61,27 @@ async function fetchBoard(): Promise<BoardData | null> {
   }
 }
 
-/** outbid-style emphasis: #1 strong coral, #2 faint, #3 barely, rest plain. */
+/** outbid-style emphasis: #1 strong accent, #2 faint, #3 barely, rest plain. */
 function cardStyle(rank: number): { className: string; style?: React.CSSProperties } {
   if (rank === 1)
     return {
-      className: "border-2 border-coral",
-      style: { backgroundColor: "rgba(233, 114, 85, 0.20)" },
+      className: "border-2 border-accent",
+      style: { backgroundColor: "rgba(139, 92, 246, 0.20)" },
     };
   if (rank === 2)
     return {
       className: "border-2",
       style: {
-        backgroundColor: "rgba(233, 114, 85, 0.08)",
-        borderColor: "rgba(233, 114, 85, 0.4)",
+        backgroundColor: "rgba(139, 92, 246, 0.08)",
+        borderColor: "rgba(139, 92, 246, 0.4)",
       },
     };
   if (rank === 3)
     return {
       className: "border-2",
       style: {
-        backgroundColor: "rgba(233, 114, 85, 0.04)",
-        borderColor: "rgba(233, 114, 85, 0.25)",
+        backgroundColor: "rgba(139, 92, 246, 0.04)",
+        borderColor: "rgba(139, 92, 246, 0.25)",
       },
     };
   return { className: "border border-line bg-surface" };
@@ -116,7 +116,7 @@ export function LiveBoard({ initial }: { initial: BoardData }) {
             >
               <span
                 className={`shrink-0 rounded-full px-3 py-1 text-sm font-bold ${
-                  row.rank === 1 ? "bg-coral text-white" : "bg-raised text-muted"
+                  row.rank === 1 ? "bg-accent text-white" : "bg-raised text-muted"
                 }`}
               >
                 #{row.rank}
@@ -128,7 +128,7 @@ export function LiveBoard({ initial }: { initial: BoardData }) {
                     href={`/go/${row.slug}`}
                     target="_blank"
                     rel="noopener"
-                    className="truncate font-bold hover:text-coral"
+                    className="truncate font-bold hover:text-accent"
                   >
                     {row.title}
                   </a>
@@ -152,7 +152,7 @@ export function LiveBoard({ initial }: { initial: BoardData }) {
                   </a>
                   <span className="hidden sm:inline">{timeAgo(row.firstBidAt)}</span>
                   <span className="hidden items-center gap-1 sm:inline-flex">
-                    <span className="inline-block size-1.5 rounded-full bg-coral" />
+                    <span className="inline-block size-1.5 rounded-full bg-accent" />
                     <strong className="font-semibold text-fg">
                       {row.clicks.toLocaleString("en-US")}
                     </strong>{" "}
@@ -160,7 +160,7 @@ export function LiveBoard({ initial }: { initial: BoardData }) {
                   </span>
                 </p>
               </div>
-              <p className="font-money shrink-0 text-lg font-bold text-coral sm:text-xl">
+              <p className="font-money shrink-0 text-lg font-bold text-accent sm:text-xl">
                 {formatUsd(row.totalBid)}
               </p>
             </article>
@@ -187,7 +187,7 @@ function TrendingPanel({ rows }: { rows: TrendingRow[] }) {
               href={`/go/${row.slug}`}
               target="_blank"
               rel="noopener"
-              className="flex min-w-0 items-center gap-2 text-sm font-medium hover:text-coral"
+              className="flex min-w-0 items-center gap-2 text-sm font-medium hover:text-accent"
             >
               <SiteIcon url={row.targetUrl} title={row.title} size={22} />
               <span className="truncate">{row.title}</span>
@@ -209,7 +209,7 @@ function ActivityPanel({ rows }: { rows: ActivityRow[] }) {
   return (
     <section className="rounded-[25px] border border-line bg-surface p-5">
       <h2 className="flex items-center gap-1.5 text-sm font-bold">
-        <span className="inline-block size-2 rounded-full bg-coral" /> Latest activity
+        <span className="inline-block size-2 rounded-full bg-accent" /> Latest activity
       </h2>
       <ul className="mt-3 divide-y divide-line">
         {rows.slice(0, 5).map((row, index) => (
@@ -220,7 +220,7 @@ function ActivityPanel({ rows }: { rows: ActivityRow[] }) {
                 href={`/go/${row.listing.slug}`}
                 target="_blank"
                 rel="noopener"
-                className="font-semibold hover:text-coral"
+                className="font-semibold hover:text-accent"
               >
                 {row.listing.title}
               </a>{" "}

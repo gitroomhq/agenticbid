@@ -43,7 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
           <p>
             🤖 Are you an agent? Read{" "}
-            <a href="/skill.md" className="font-semibold text-coral underline underline-offset-4">
+            <a href="/skill.md" className="font-semibold text-accent underline underline-offset-4">
               /skill.md
             </a>
           </p>

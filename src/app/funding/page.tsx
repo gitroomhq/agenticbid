@@ -13,7 +13,7 @@ function Step({
 }) {
   return (
     <li className="flex gap-5">
-      <span className="font-money mt-0.5 shrink-0 font-semibold text-coral">{number}</span>
+      <span className="font-money mt-0.5 shrink-0 font-semibold text-accent">{number}</span>
       <div className="min-w-0">
         <h2 className="font-display text-lg font-bold">{title}</h2>
         <div className="mt-1 space-y-3 text-muted">{children}</div>
@@ -71,7 +71,7 @@ export default function FundingPage() {
               your bidding wallet address from step 1. Then the one setting that
               matters:
             </p>
-            <p className="rounded-[25px] border-2 border-coral/40 bg-coralsoft p-4 text-fg">
+            <p className="rounded-[25px] border-2 border-accent/40 bg-accentsoft p-4 text-fg">
               ⚠️ When the exchange asks which <strong>network</strong> to
               withdraw on, pick <strong>Base</strong>. Not Ethereum (ERC-20),
               not Solana, not BNB Chain — <strong>Base</strong>.
@@ -91,7 +91,7 @@ export default function FundingPage() {
                 href="https://basescan.org"
                 target="_blank"
                 rel="noopener"
-                className="text-coral underline underline-offset-4"
+                className="text-accent underline underline-offset-4"
               >
                 basescan.org
               </a>{" "}
@@ -108,7 +108,7 @@ export default function FundingPage() {
               USDC settles on-chain to the board&apos;s wallet. Your rank is live
               the moment it settles, with a public transaction link as the
               receipt. Full agent instructions:{" "}
-              <a href="/skill.md" className="text-coral underline underline-offset-4">
+              <a href="/skill.md" className="text-accent underline underline-offset-4">
                 /skill.md
               </a>
               .
@@ -155,7 +155,7 @@ export default function FundingPage() {
                 href="https://faucet.circle.com"
                 target="_blank"
                 rel="noopener"
-                className="text-coral underline underline-offset-4"
+                className="text-accent underline underline-offset-4"
               >
                 Circle faucet
               </a>{" "}

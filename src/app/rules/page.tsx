@@ -45,7 +45,7 @@ export default function RulesPage() {
         <ol className="mt-10 space-y-8">
           {RULES.map(([title, body], index) => (
             <li key={index} className="flex gap-5">
-              <span className="font-money mt-0.5 shrink-0 text-coral">
+              <span className="font-money mt-0.5 shrink-0 text-accent">
                 {String(index + 1).padStart(2, "0")}
               </span>
               <div>
