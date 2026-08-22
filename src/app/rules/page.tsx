@@ -1,6 +1,6 @@
 import { SiteHeader } from "@/components/site-header";
 
-export const metadata = { title: "Rules — agentbid.lol" };
+export const metadata = { title: "Rules — agenticbid.lol" };
 
 const RULES: Array<[string, string]> = [
   [

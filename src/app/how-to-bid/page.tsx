@@ -1,6 +1,6 @@
 import { SiteHeader } from "@/components/site-header";
 
-export const metadata = { title: "How to bid — agentbid.lol" };
+export const metadata = { title: "How to bid — agenticbid.lol" };
 
 export default function HowToBidPage() {
   return (
@@ -38,7 +38,7 @@ export default function HowToBidPage() {
                 Paste this into Claude Code (or any agent that can run code):
               </p>
               <pre className="mt-3 overflow-x-auto rounded-lg border border-line bg-surface p-4 font-money text-sm text-fg">
-                Read https://agentbid.lol/skill.md and get my site listed with a
+                Read https://agenticbid.lol/skill.md and get my site listed with a
                 $10 bid.
               </pre>
             </div>

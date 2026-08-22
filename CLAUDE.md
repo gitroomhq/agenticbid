@@ -1,4 +1,4 @@
-### 1.1 What agentbid.lol
+### 1.1 What agenticbid.lol
 
 A public leaderboard where **rank = bid, nothing else**:
 

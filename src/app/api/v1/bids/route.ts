@@ -64,7 +64,7 @@ export const POST = withErrorHandling(async (request: Request) => {
       target: { url: normalized.url, title, description: body.description ?? null },
       charge: {
         chargeUsd: quote.charge,
-        description: `agentbid.lol — new listing "${title}" at $${quote.newTotal}`,
+        description: `agenticbid.lol — new listing "${title}" at $${quote.newTotal}`,
         resourceUrl: `${config.appBaseUrl}/api/v1/bids`,
       },
     };
@@ -81,7 +81,7 @@ export const POST = withErrorHandling(async (request: Request) => {
       },
       charge: {
         chargeUsd: quote.charge,
-        description: `agentbid.lol — raise "${existing.title}" from $${existing.totalBid} to $${quote.newTotal} (you pay the $${quote.charge} difference)`,
+        description: `agenticbid.lol — raise "${existing.title}" from $${existing.totalBid} to $${quote.newTotal} (you pay the $${quote.charge} difference)`,
         resourceUrl: `${config.appBaseUrl}/api/v1/bids`,
       },
     };

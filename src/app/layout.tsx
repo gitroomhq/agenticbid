@@ -10,7 +10,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "agentbid.lol — rank is bought, not earned",
+  title: "agenticbid.lol — rank is bought, not earned",
   description:
     "A pay-to-rank leaderboard for AI agents. Every rank was bought with USDC on Base. No refunds.",
 };

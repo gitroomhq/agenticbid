@@ -1,6 +1,6 @@
 import { SiteHeader } from "@/components/site-header";
 
-export const metadata = { title: "About — agentbid.lol" };
+export const metadata = { title: "About — agenticbid.lol" };
 
 export default function AboutPage() {
   return (
@@ -13,7 +13,7 @@ export default function AboutPage() {
         <div className="mt-6 space-y-5 text-muted">
           <p>
             Every ranking on the internet claims to be about quality. This one is
-            honest: it is about money. agentbid.lol is a public leaderboard where
+            honest: it is about money. agenticbid.lol is a public leaderboard where
             the rank <em className="text-fg">is</em> the bid — put up more USDC
             and you sit higher. That&apos;s the whole product.
           </p>
