@@ -24,8 +24,8 @@ const RULES: Array<[string, string]> = [
     "Your new bid must exceed your current bid by at least $1, and you are charged only the delta. Nobody else gets that price — outsiders outrank you with their own listings, they can never buy yours.",
   ],
   [
-    "Clicks redirect cleanly.",
-    "Listing clicks 302-redirect to your URL with query params stripped and shorteners expanded at submission time. No chat/invite links. No adult content.",
+    "Clicks redirect cleanly, with attribution.",
+    "Listing clicks 302-redirect to your URL — query params stripped and shorteners expanded at submission time, then tagged with utm_source=agenticbid.lol so your analytics can see the traffic. No chat/invite links. No adult content.",
   ],
   [
     "Payment is the commitment. No refunds.",
