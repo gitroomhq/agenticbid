@@ -14,6 +14,7 @@ export const GET = withErrorHandling(
       {
         slug: listing.slug,
         title: listing.title,
+        description: listing.description,
         targetUrl: listing.targetUrl,
         totalBid: listing.totalBid,
         rank,

@@ -23,6 +23,7 @@ model Listing {
   slug        String       @unique // used in /go/[slug]
   targetUrl   String       @unique // normalized: params stripped, shorteners expanded
   title       String
+  description String? // short blurb: agent-provided or fetched from the site's meta description
   totalBid    Int // whole USD dollars, current effective bid
   firstBidAt  DateTime     @default(now()) // tiebreaker: older keeps higher rank
   lastRaiseAt DateTime     @default(now())

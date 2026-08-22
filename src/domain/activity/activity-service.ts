@@ -10,7 +10,7 @@ export class ActivityService {
       take: Math.min(take, 100),
       where: { txHash: { not: null } }, // only settled money shows up
       include: {
-        listing: { select: { slug: true, title: true } },
+        listing: { select: { slug: true, title: true, targetUrl: true } },
         agent: { select: { name: true } },
       },
     });
@@ -18,7 +18,11 @@ export class ActivityService {
       kind: bid.kind,
       amount: bid.amount,
       newTotal: bid.newTotal,
-      listing: { slug: bid.listing.slug, title: bid.listing.title },
+      listing: {
+        slug: bid.listing.slug,
+        title: bid.listing.title,
+        targetUrl: bid.listing.targetUrl,
+      },
       agent: bid.agent.name,
       txHash: bid.txHash,
       network: bid.network,

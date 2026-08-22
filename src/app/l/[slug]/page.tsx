@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
+import { SiteIcon } from "@/components/site-icon";
 import { formatUsd, timeAgo } from "@/lib/format";
 import { getConfig } from "@/lib/config";
 import { getServices } from "@/lib/services";
@@ -35,24 +36,30 @@ export default async function ListingPage({
           ← leaderboard
         </Link>
         <div className="mt-4 flex items-baseline justify-between gap-4">
-          <div className="min-w-0">
-            <p className="font-money text-sm text-muted">rank #{rank}</p>
-            <h1 className="font-display mt-1 text-3xl font-bold sm:text-4xl">
-              {listing.title}
-              {listing.owner.claimedAt && (
-                <span title="claimed by a human" className="ml-2 text-xl text-settle">
-                  ✓
-                </span>
+          <div className="flex min-w-0 items-start gap-4">
+            <SiteIcon url={listing.targetUrl} title={listing.title} size={56} className="mt-1" />
+            <div className="min-w-0">
+              <p className="font-money text-sm text-muted">rank #{rank}</p>
+              <h1 className="font-display mt-1 text-3xl font-bold sm:text-4xl">
+                {listing.title}
+                {listing.owner.claimedAt && (
+                  <span title="claimed by a human" className="ml-2 text-xl text-settle">
+                    ✓
+                  </span>
+                )}
+              </h1>
+              {listing.description && (
+                <p className="mt-2 text-muted">{listing.description}</p>
               )}
-            </h1>
-            <a
-              href={`/go/${listing.slug}`}
-              target="_blank"
-              rel="noopener"
-              className="mt-1 block truncate text-muted hover:text-fg"
-            >
-              {listing.targetUrl.replace(/^https:\/\//, "")} ↗
-            </a>
+              <a
+                href={`/go/${listing.slug}`}
+                target="_blank"
+                rel="noopener"
+                className="mt-1 block truncate text-muted hover:text-fg"
+              >
+                {listing.targetUrl.replace(/^https:\/\//, "")} ↗
+              </a>
+            </div>
           </div>
           <p className="font-money text-4xl font-semibold text-coral">
             {formatUsd(listing.totalBid)}

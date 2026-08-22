@@ -9,6 +9,7 @@ export interface BoardRow {
   rank: number;
   slug: string;
   title: string;
+  description: string | null;
   targetUrl: string;
   totalBid: number;
   clicks: number;
@@ -20,8 +21,8 @@ export interface BoardRow {
 
 export interface ApplyBidInput {
   agentId: string;
-  /** Normalized target; ignored for raises. */
-  target: { url: string; title: string };
+  /** Normalized target; url/title ignored for raises. */
+  target: { url: string; title: string; description?: string | null };
   quote: Quote;
   /** Existing listing id when raising. */
   listingId?: string;
@@ -67,6 +68,7 @@ export class ListingService {
         rank: baseRank + index + 1,
         slug: listing.slug,
         title: listing.title,
+        description: listing.description,
         targetUrl: listing.targetUrl,
         totalBid: listing.totalBid,
         clicks: listing.clicks,
@@ -128,7 +130,14 @@ export class ListingService {
           if (!input.listingId) throw new Error("listingId required for raises");
           listing = await tx.listing.update({
             where: { id: input.listingId },
-            data: { totalBid: input.quote.newTotal, lastRaiseAt: new Date() },
+            data: {
+              totalBid: input.quote.newTotal,
+              lastRaiseAt: new Date(),
+              // owners may refresh their blurb when raising
+              ...(input.target.description !== undefined && input.target.description !== null
+                ? { description: input.target.description }
+                : {}),
+            },
           });
         } else {
           listing = await tx.listing.create({
@@ -136,6 +145,7 @@ export class ListingService {
               slug: await uniqueSlug(this.db, input.target.title),
               targetUrl: input.target.url,
               title: input.target.title,
+              description: input.target.description ?? null,
               totalBid: input.quote.newTotal,
               ownerId: input.agentId,
             },
@@ -235,6 +245,7 @@ export class ListingService {
         return {
           slug: listing.slug,
           title: listing.title,
+          targetUrl: listing.targetUrl,
           totalBid: listing.totalBid,
           clicksInWindow: g._count.listingId,
           clicksPerHour: Math.round((g._count.listingId / windowHours) * 100) / 100,

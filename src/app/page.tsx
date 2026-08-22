@@ -20,6 +20,7 @@ async function loadInitialData(): Promise<BoardData> {
       rank: row.rank,
       slug: row.slug,
       title: row.title,
+      description: row.description,
       targetUrl: row.targetUrl,
       totalBid: row.totalBid,
       clicks: row.clicks,

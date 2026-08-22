@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { formatUsd, timeAgo } from "@/lib/format";
+import { SiteIcon } from "@/components/site-icon";
 
 export interface BoardRow {
   rank: number;
   slug: string;
   title: string;
+  description: string | null;
   targetUrl: string;
   totalBid: number;
   clicks: number;
@@ -19,7 +21,7 @@ export interface ActivityRow {
   kind: "NEW" | "RAISE";
   amount: number;
   newTotal: number;
-  listing: { slug: string; title: string };
+  listing: { slug: string; title: string; targetUrl: string };
   agent: string;
   explorerUrl: string | null;
   at: string;
@@ -28,6 +30,7 @@ export interface ActivityRow {
 export interface TrendingRow {
   slug: string;
   title: string;
+  targetUrl: string;
   totalBid: number;
   clicksPerHour: number;
 }
@@ -119,6 +122,7 @@ export function LiveBoard({ initial }: { initial: BoardData }) {
               >
                 #{row.rank}
               </span>
+              <SiteIcon url={row.targetUrl} title={row.title} size={40} />
               <div className="min-w-0 flex-1">
                 <p className="flex items-center gap-1.5">
                   <Link
@@ -133,6 +137,9 @@ export function LiveBoard({ initial }: { initial: BoardData }) {
                     </span>
                   )}
                 </p>
+                {row.description && (
+                  <p className="mt-0.5 line-clamp-2 text-sm text-muted">{row.description}</p>
+                )}
                 <p className="mt-0.5 flex flex-wrap items-center gap-x-3 text-sm text-muted">
                   <a
                     href={`/go/${row.slug}`}
@@ -174,9 +181,13 @@ function TrendingPanel({ rows }: { rows: TrendingRow[] }) {
       <h2 className="text-sm font-bold">🔥 Trending right now</h2>
       <ul className="mt-3 divide-y divide-line">
         {rows.slice(0, 5).map((row) => (
-          <li key={row.slug} className="flex items-baseline justify-between gap-3 py-2">
-            <Link href={`/l/${row.slug}`} className="truncate text-sm font-medium hover:text-coral">
-              {row.title}
+          <li key={row.slug} className="flex items-center justify-between gap-3 py-2">
+            <Link
+              href={`/l/${row.slug}`}
+              className="flex min-w-0 items-center gap-2 text-sm font-medium hover:text-coral"
+            >
+              <SiteIcon url={row.targetUrl} title={row.title} size={22} />
+              <span className="truncate">{row.title}</span>
             </Link>
             <span className="font-money shrink-0 text-sm text-muted">
               {row.clicksPerHour} clicks/h
@@ -199,8 +210,9 @@ function ActivityPanel({ rows }: { rows: ActivityRow[] }) {
       </h2>
       <ul className="mt-3 divide-y divide-line">
         {rows.slice(0, 5).map((row, index) => (
-          <li key={index} className="flex items-baseline justify-between gap-3 py-2 text-sm">
-            <p className="min-w-0 truncate">
+          <li key={index} className="flex items-center justify-between gap-3 py-2 text-sm">
+            <p className="flex min-w-0 items-center gap-2 truncate">
+              <SiteIcon url={row.listing.targetUrl} title={row.listing.title} size={22} />
               <Link href={`/l/${row.listing.slug}`} className="font-semibold hover:text-coral">
                 {row.listing.title}
               </Link>{" "}

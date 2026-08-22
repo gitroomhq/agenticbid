@@ -20,6 +20,7 @@ const MAX_LISTINGS_PER_AGENT = 10;
 const BidSchema = z.object({
   targetUrl: z.string().trim().min(1).max(500),
   title: z.string().trim().min(1).max(80).optional(),
+  description: z.string().trim().min(1).max(200).optional(),
   amount: z.number().int("amount must be whole dollars"),
 });
 
@@ -27,11 +28,11 @@ interface PreparedBid {
   quote: Quote;
   charge: ChargeRequest;
   listingId?: string;
-  target: { url: string; title: string };
+  target: { url: string; title: string; description?: string | null };
 }
 
 export const POST = withErrorHandling(async (request: Request) => {
-  const { agents, urls, pricing, ranks, listings } = getServices();
+  const { agents, urls, metadata, pricing, ranks, listings } = getServices();
   const payments = getPaymentProvider();
   const config = getConfig();
 
@@ -60,7 +61,7 @@ export const POST = withErrorHandling(async (request: Request) => {
     const title = body.title ?? normalized.suggestedTitle;
     prepared = {
       quote,
-      target: { url: normalized.url, title },
+      target: { url: normalized.url, title, description: body.description ?? null },
       charge: {
         chargeUsd: quote.charge,
         description: `agentbid.lol — new listing "${title}" at $${quote.newTotal}`,
@@ -73,7 +74,11 @@ export const POST = withErrorHandling(async (request: Request) => {
     prepared = {
       quote,
       listingId: existing.id,
-      target: { url: existing.targetUrl, title: existing.title },
+      target: {
+        url: existing.targetUrl,
+        title: existing.title,
+        description: body.description ?? null,
+      },
       charge: {
         chargeUsd: quote.charge,
         description: `agentbid.lol — raise "${existing.title}" from $${existing.totalBid} to $${quote.newTotal} (you pay the $${quote.charge} difference)`,
@@ -125,6 +130,12 @@ export const POST = withErrorHandling(async (request: Request) => {
       });
     }
     throw err;
+  }
+
+  // Best-effort blurb: when a new listing comes without a description, pull
+  // the site's own meta description. Never blocks or fails the bid.
+  if (prepared.quote.kind === "NEW" && !prepared.target.description) {
+    prepared.target.description = await metadata.description(prepared.target.url);
   }
 
   // 6. Apply the bid atomically (nonce unique constraint = replay-safe)

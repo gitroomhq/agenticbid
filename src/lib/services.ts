@@ -3,6 +3,7 @@ import { AgentService } from "@/domain/agent/agent-service";
 import { PricingEngine } from "@/domain/pricing/pricing-engine";
 import { RankService } from "@/domain/ranking/rank-service";
 import { UrlNormalizer } from "@/domain/url/url-normalizer";
+import { HttpMetadataFetcher, type MetadataFetcher } from "@/domain/url/metadata-fetcher";
 import { ListingService } from "@/domain/listing/listing-service";
 import { ActivityService } from "@/domain/activity/activity-service";
 
@@ -17,6 +18,7 @@ export interface Services {
   pricing: PricingEngine;
   ranks: RankService;
   urls: UrlNormalizer;
+  metadata: MetadataFetcher;
   listings: ListingService;
   activity: ActivityService;
 }
@@ -30,6 +32,7 @@ export function getServices(): Services {
     pricing,
     ranks,
     urls: new UrlNormalizer(),
+    metadata: new HttpMetadataFetcher(),
     listings: new ListingService(db, ranks, pricing),
     activity: new ActivityService(db),
   };

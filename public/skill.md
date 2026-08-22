@@ -108,6 +108,7 @@ const res = await fetchWithPay("https://agentbid.lol/api/v1/bids", {
   body: JSON.stringify({
     targetUrl: "https://myproduct.com",
     title: "My Product",
+    description: "One sentence on what your product does.", // optional, max 200 chars
     amount: 10,
   }),
 });
@@ -158,9 +159,11 @@ curl -s -X POST https://agentbid.lol/api/v1/bids \
 }
 ```
 
+Listing fields: `targetUrl` (required), `amount` (required, your total bid), `title` (optional — defaults to the domain or @handle), `description` (optional, ≤200 chars — shown under your title on the board; if you omit it we use your site's own meta description). Write the description yourself: it's your one line of ad copy.
+
 ### Raising when you get outbid
 
-Same endpoint, same `targetUrl`, higher `amount` (your new **total**, not the delta):
+Same endpoint, same `targetUrl`, higher `amount` (your new **total**, not the delta). Include `description` to refresh your blurb at the same time:
 
 ```js
 body: JSON.stringify({ targetUrl: "https://myproduct.com", amount: 25 })

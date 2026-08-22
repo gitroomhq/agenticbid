@@ -8,26 +8,26 @@ const db = new PrismaClient({
 });
 
 const FAKE_PRODUCTS = [
-  ["Postiz", "https://postiz.com"],
-  ["Moltbook", "https://moltbook.com"],
-  ["AgentKit", "https://agentkit.dev"],
-  ["Shipfast", "https://shipfa.st"],
-  ["Devtool X", "https://devtoolx.io"],
-  ["Cursorly", "https://cursorly.app"],
-  ["Buildspace", "https://buildspace.sh"],
-  ["Launchpad", "https://launchpad.gg"],
-  ["Indie Radar", "https://indieradar.co"],
-  ["Promptbase", "https://promptbase.example.com"],
-  ["Coldmail AI", "https://coldmail.ai"],
-  ["Sitegen", "https://sitegen.dev"],
-  ["Formless", "https://formless.so"],
-  ["Notifly", "https://notifly.app"],
-  ["Datapipe", "https://datapipe.run"],
-  ["Screenshot One", "https://screenshotone.example.com"],
-  ["Uptime Lemur", "https://uptimelemur.com"],
-  ["Kanban Zen", "https://kanbanzen.io"],
-  ["Vector Vault", "https://vectorvault.dev"],
-  ["Inbox Hero", "https://inboxhero.app"],
+  ["Postiz", "Open-source social media scheduling for 28+ platforms.", "https://postiz.com"],
+  ["Moltbook", "The social network where AI agents post, comment, and upvote.", "https://moltbook.com"],
+  ["AgentKit", "Build, deploy, and monetize AI agents in minutes.", "https://agentkit.dev"],
+  ["Shipfast", "The NextJS boilerplate that ships your startup in days.", "https://shipfa.st"],
+  ["Devtool X", "One dashboard for every API your team depends on.", "https://devtoolx.io"],
+  ["Cursorly", "AI pair programming that reviews itself.", "https://cursorly.app"],
+  ["Buildspace", "Six weeks to go from idea to shipped product.", "https://buildspace.sh"],
+  ["Launchpad", "Launch pages that convert lurkers into users.", "https://launchpad.gg"],
+  ["Indie Radar", "Daily ranking of what indie hackers are shipping.", "https://indieradar.co"],
+  ["Promptbase", "Marketplace for battle-tested AI prompts.", "https://promptbase.example.com"],
+  ["Coldmail AI", "Cold outreach that writes and warms itself.", "https://coldmail.ai"],
+  ["Sitegen", "Describe your site, get it deployed in 60 seconds.", "https://sitegen.dev"],
+  ["Formless", "Forms your users answer by just talking.", "https://formless.so"],
+  ["Notifly", "Push, email, and in-app notifications from one API.", "https://notifly.app"],
+  ["Datapipe", "Zero-config ETL for product analytics.", "https://datapipe.run"],
+  ["Screenshot One", "Pixel-perfect website screenshots as an API.", "https://screenshotone.example.com"],
+  ["Uptime Lemur", "Uptime monitoring that pings you before users notice.", "https://uptimelemur.com"],
+  ["Kanban Zen", "A kanban board with nothing to configure.", "https://kanbanzen.io"],
+  ["Vector Vault", "Embeddings storage with retrieval you can debug.", "https://vectorvault.dev"],
+  ["Inbox Hero", "Reach inbox zero with an AI triage sidekick.", "https://inboxhero.app"],
 ] as const;
 
 async function main() {
@@ -45,17 +45,18 @@ async function main() {
 
   const now = Date.now();
   for (let i = 0; i < FAKE_PRODUCTS.length; i++) {
-    const [title, targetUrl] = FAKE_PRODUCTS[i];
+    const [title, description, targetUrl] = FAKE_PRODUCTS[i];
     const totalBid = Math.max(5, Math.round(500 / (i + 1)));
     const firstBidAt = new Date(now - (i + 1) * 3_600_000 * 6);
     const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
     const listing = await db.listing.upsert({
       where: { targetUrl },
-      update: {},
+      update: { description },
       create: {
         slug,
         targetUrl,
         title,
+        description,
         totalBid,
         firstBidAt,
         lastRaiseAt: firstBidAt,
