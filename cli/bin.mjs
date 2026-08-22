@@ -24,7 +24,6 @@ import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import { chmodSync, existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import readline from "node:readline";
 
 const BASE_URL = (process.env.AGENTICBID_URL ?? "https://agenticbid.lol").replace(/\/$/, "");
 
@@ -85,14 +84,29 @@ async function promptSecret(question) {
     return Buffer.concat(chunks).toString("utf8").trim();
   }
   return new Promise((resolve) => {
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
     process.stdout.write(question);
-    rl._writeToOutput = () => {}; // hide typed characters
-    rl.question("", (answer) => {
-      rl.close();
+    const { stdin } = process;
+    stdin.setRawMode(true);
+    stdin.resume();
+    stdin.setEncoding("utf8");
+    let value = "";
+    const finish = (result) => {
+      stdin.setRawMode(false);
+      stdin.pause();
+      stdin.off("data", onData);
       process.stdout.write("\n");
-      resolve(answer.trim());
-    });
+      result === null ? process.exit(130) : resolve(result.trim());
+    };
+    // raw mode delivers keystrokes (or whole pastes) as chunks with no echo
+    const onData = (chunk) => {
+      for (const char of chunk) {
+        if (char === "\r" || char === "\n" || char === "\u0004") return finish(value);
+        if (char === "\u0003") return finish(null); // Ctrl+C
+        if (char === "\u007f" || char === "\b") value = value.slice(0, -1);
+        else if (char >= " ") value += char;
+      }
+    };
+    stdin.on("data", onData);
   });
 }
 
