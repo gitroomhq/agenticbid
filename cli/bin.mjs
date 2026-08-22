@@ -10,6 +10,12 @@
  *   agenticbid board                 read the leaderboard
  *   agenticbid me                    your listings and ranks
  *   agenticbid bid --target <url> --amount <usd> [--title t] [--description d]
+ *   agenticbid budget --set <usd>    standing spend ceiling (interactive terminal only)
+ *
+ * Every charge requires human approval: live (a y/N prompt at a terminal,
+ * shown the exact quote before anything is signed) or standing (a budget a
+ * human set at a terminal). Headless runs — agent harnesses, CI, cron have
+ * no TTY — cannot set or raise budgets and cannot bid without one.
  *
  * Credentials resolve env-first, then the vault (~/.agenticbid/):
  *   AGENTICBID_API_KEY    agent API key (register/bid save it to the vault)
@@ -26,6 +32,14 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 
 const BASE_URL = (process.env.AGENTICBID_URL ?? "https://agenticbid.lol").replace(/\/$/, "");
+
+// "A human is present" means an interactive terminal on both ends. Agent
+// harnesses (Claude Code, CI, cron) run commands without a TTY, so nothing
+// that grants spending authority can execute there.
+const IS_TTY = Boolean(process.stdin.isTTY && process.stdout.isTTY);
+const HUMAN_APPROVAL_HINT =
+  "human_approval_required — this needs a human at an interactive terminal. " +
+  "Agents: show your human the exact command and let them run it themselves.";
 
 // ---------------------------------------------------------------------------
 // Encrypted credential vault (~/.agenticbid/)
@@ -110,6 +124,20 @@ async function promptSecret(question) {
   });
 }
 
+/** Ask the human at the terminal for an explicit yes. Call only when IS_TTY. */
+async function confirmHuman(question) {
+  const { createInterface } = await import("node:readline/promises");
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    const answer = (await rl.question(question)).trim();
+    return /^y(es)?$/i.test(answer);
+  } catch {
+    return false; // Ctrl+D / closed input is never approval
+  } finally {
+    rl.close();
+  }
+}
+
 // ---------------------------------------------------------------------------
 // helpers
 // ---------------------------------------------------------------------------
@@ -160,6 +188,7 @@ async function api(path, options = {}, apiKey) {
 
 function setBudget(vault, flags) {
   if (flags.budget === undefined) return vault;
+  if (!IS_TTY) die(`${HUMAN_APPROVAL_HINT} (setting a budget grants standing spending authority)`);
   const budget = Number(flags.budget);
   if (!Number.isInteger(budget) || budget <= 0) die("--budget must be a whole dollar amount");
   return { ...vault, budgetUsd: budget, spentUsd: vault.spentUsd ?? 0 };
@@ -168,6 +197,7 @@ function setBudget(vault, flags) {
 async function budgetCommand(flags) {
   const vault = readVault();
   if (flags.set) {
+    if (!IS_TTY) die(`${HUMAN_APPROVAL_HINT} (setting a budget grants standing spending authority)`);
     const budget = Number(flags.set);
     if (!Number.isInteger(budget) || budget <= 0) die("--set must be a whole dollar amount");
     writeVault({ ...vault, budgetUsd: budget, spentUsd: vault.spentUsd ?? 0 });
@@ -264,51 +294,73 @@ async function bid(flags) {
   if (!target) die("--target <url or @handle> is required");
   if (!Number.isInteger(amount) || amount <= 0) die("--amount must be a whole dollar amount");
 
-  // --quote: fetch the exact price without signing or paying anything.
+  let apiKey = getApiKey();
+  if (!apiKey && flags.quote === "true") die("no API key. Run: agenticbid register --name <name>");
+  if (!apiKey) {
+    console.log("no API key found — registering a new agent first...");
+    apiKey = await register(flags.name ?? `agent-${Math.random().toString(36).slice(2, 8)}`);
+  }
+
+  // Always fetch the exact quote before anything is signed, so approval —
+  // live or standing — is over the real charge, not the requested total.
+  const { status, body: quoteBody } = await api(
+    "/api/v1/bids",
+    { method: "POST", body: JSON.stringify({ targetUrl: target, amount }) },
+    apiKey,
+  );
+  if (status !== 402) die(`${quoteBody.error} — ${quoteBody.hint}`);
+  const quote = quoteBody.quote;
+
   if (flags.quote === "true") {
-    const apiKeyForQuote = getApiKey();
-    if (!apiKeyForQuote) die("no API key. Run: agenticbid register --name <name>");
-    const { status, body } = await api(
-      "/api/v1/bids",
-      { method: "POST", body: JSON.stringify({ targetUrl: target, amount }) },
-      apiKeyForQuote,
-    );
-    if (status !== 402) die(`${body.error} — ${body.hint}`);
     console.log(`quote (nothing signed, nothing paid):`);
-    console.log(`  kind:      ${body.quote.kind}`);
-    console.log(`  charge:    $${body.quote.chargeUsd}`);
-    console.log(`  new total: $${body.quote.newTotal}`);
-    console.log(`  to beat #1: $${body.quote.priceToBeatNumber1}`);
+    console.log(`  kind:      ${quote.kind}`);
+    console.log(`  charge:    $${quote.chargeUsd}`);
+    console.log(`  new total: $${quote.newTotal}`);
+    console.log(`  to beat #1: $${quote.priceToBeatNumber1}`);
     return;
   }
+
+  const charge = Number(quote.chargeUsd);
+  if (!Number.isInteger(charge) || charge <= 0) die(`unexpected quote from server: ${JSON.stringify(quote)}`);
 
   // hard budget cap: the human's total spend ceiling, enforced cumulatively
   const vault = readVault();
   if (vault.budgetUsd !== undefined) {
     const spent = vault.spentUsd ?? 0;
-    if (spent + amount > vault.budgetUsd) {
+    if (spent + charge > vault.budgetUsd) {
       die(
-        `this bid ($${amount}) would exceed the budget: $${spent} spent of $${vault.budgetUsd} total. ` +
+        `this bid (charge $${charge}) would exceed the budget: $${spent} spent of $${vault.budgetUsd} total. ` +
           `A human can raise it with: agenticbid budget --set <usd>`,
       );
     }
+  }
+
+  // Human approval for every charge: live (y/N at a terminal) or standing
+  // (a budget a human set at a terminal — budgets can't be created headless).
+  if (IS_TTY) {
+    console.log(`about to bid on ${target}:`);
+    console.log(`  charge:    $${charge}${quote.kind === "RAISE" ? `  (raise to $${quote.newTotal} total)` : ""}`);
+    if (!(await confirmHuman(`approve this $${charge} USDC charge? [y/N] `))) {
+      die("cancelled — nothing signed, nothing paid");
+    }
+  } else if (vault.budgetUsd === undefined) {
+    die(
+      `${HUMAN_APPROVAL_HINT} Headless bids need a standing budget: ask your human to run ` +
+        `"npx -y agenticbid budget --set <usd>" at a terminal (this bid would charge $${charge}), ` +
+        `then rerun this exact command.`,
+    );
   }
 
   const walletKey = getWalletKey();
   if (!walletKey) {
     die("no wallet key. Run once: agenticbid wallet set  (it must hold USDC on Base; it only ever signs locally)");
   }
-  let apiKey = getApiKey();
-  if (!apiKey) {
-    console.log("no API key found — registering a new agent first...");
-    apiKey = await register(flags.name ?? `agent-${Math.random().toString(36).slice(2, 8)}`);
-  }
 
   const account = privateKeyToAccount(walletKey);
   const client = new x402Client();
   registerExactEvmScheme(client, { signer: account });
-  // sign at most the amount the caller asked to bid — nothing more
-  client.setSpendControls({ maxAmountPerPayment: `$${amount}` });
+  // sign at most the quoted, approved charge — nothing more
+  client.setSpendControls({ maxAmountPerPayment: `$${charge}` });
   const fetchWithPay = wrapFetchWithPayment(fetch, client);
 
   console.log(`bidding $${amount} on ${target} (paying from ${account.address})...`);
@@ -372,6 +424,11 @@ then:
   agenticbid me
   agenticbid bid --target https://myproduct.com --amount 10 --quote   price only, signs nothing
   agenticbid bid --target https://myproduct.com --amount 10 [--title "My Product"] [--description "..."]
+
+approval: every charge needs a human — at a terminal, bid shows the exact
+charge and asks y/N before signing; headless runs (agents, CI) can only bid
+inside a budget a human set at a terminal, and budget --set refuses to run
+without one.
 
 credentials: env vars (AGENTICBID_API_KEY, WALLET_PRIVATE_KEY) override the
 vault in ~/.agenticbid/. AGENTICBID_URL overrides the board URL.`);

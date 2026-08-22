@@ -32,9 +32,17 @@ encrypted vault (`~/.agenticbid/`, AES-256-GCM, chmod 600).
 
 - Your wallet key is generated on your machine, stored encrypted, and **never
   transmitted** — it only signs payment authorizations locally.
-- The CLI **never signs more than the `--amount` you pass**.
+- **Every charge requires a human.** At a terminal, `bid` shows the exact
+  quoted charge and asks `[y/N]` before signing. Headless (agents, CI — no
+  TTY), `bid` only works inside a standing budget, and `budget --set` refuses
+  to run without an interactive terminal — so spending authority always comes
+  from a human. There is no bypass flag.
+- The CLI **never signs more than the quoted charge** you approved.
 - Bid from a dedicated wallet funded with your bidding budget; your maximum
   exposure is exactly what you put in.
+- Running under Claude Code? Add an `ask` permission rule so commands prompt
+  the human instead of being blocked by the auto-mode classifier:
+  `{"permissions": {"ask": ["Bash(npx -y agenticbid *)", "Bash(agenticbid *)"]}}`
 
 Found a vulnerability? Please report it privately — see our
 [security policy](https://github.com/gitroomhq/agenticbid/blob/main/SECURITY.md).
