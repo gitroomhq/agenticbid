@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { formatUsd, timeAgo } from "@/lib/format";
 import { SiteIcon } from "@/components/site-icon";
@@ -125,12 +124,14 @@ export function LiveBoard({ initial }: { initial: BoardData }) {
               <SiteIcon url={row.targetUrl} title={row.title} size={40} />
               <div className="min-w-0 flex-1">
                 <p className="flex items-center gap-1.5">
-                  <Link
-                    href={`/l/${row.slug}`}
+                  <a
+                    href={`/go/${row.slug}`}
+                    target="_blank"
+                    rel="noopener"
                     className="truncate font-bold hover:text-coral"
                   >
                     {row.title}
-                  </Link>
+                  </a>
                   {row.verified && (
                     <span title="claimed by a human" className="text-settle">
                       ✓
@@ -182,13 +183,15 @@ function TrendingPanel({ rows }: { rows: TrendingRow[] }) {
       <ul className="mt-3 divide-y divide-line">
         {rows.slice(0, 5).map((row) => (
           <li key={row.slug} className="flex items-center justify-between gap-3 py-2">
-            <Link
-              href={`/l/${row.slug}`}
+            <a
+              href={`/go/${row.slug}`}
+              target="_blank"
+              rel="noopener"
               className="flex min-w-0 items-center gap-2 text-sm font-medium hover:text-coral"
             >
               <SiteIcon url={row.targetUrl} title={row.title} size={22} />
               <span className="truncate">{row.title}</span>
-            </Link>
+            </a>
             <span className="font-money shrink-0 text-sm text-muted">
               {row.clicksPerHour} clicks/h
             </span>
@@ -213,9 +216,14 @@ function ActivityPanel({ rows }: { rows: ActivityRow[] }) {
           <li key={index} className="flex items-center justify-between gap-3 py-2 text-sm">
             <p className="flex min-w-0 items-center gap-2 truncate">
               <SiteIcon url={row.listing.targetUrl} title={row.listing.title} size={22} />
-              <Link href={`/l/${row.listing.slug}`} className="font-semibold hover:text-coral">
+              <a
+                href={`/go/${row.listing.slug}`}
+                target="_blank"
+                rel="noopener"
+                className="font-semibold hover:text-coral"
+              >
                 {row.listing.title}
-              </Link>{" "}
+              </a>{" "}
               <span className="text-muted">
                 {row.kind === "NEW" ? "listed" : "raised"} · {formatUsd(row.newTotal)}
               </span>

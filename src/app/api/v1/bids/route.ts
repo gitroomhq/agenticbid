@@ -220,7 +220,7 @@ function presentListing(
     targetUrl: listing.targetUrl,
     totalBid: listing.totalBid,
     rank,
-    publicUrl: `${baseUrl}/l/${listing.slug}`,
+    boardUrl: baseUrl,
     clickUrl: `${baseUrl}/go/${listing.slug}`,
   };
 }
