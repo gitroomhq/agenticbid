@@ -8,7 +8,8 @@
   },
   "files": [
     "bin.mjs",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "engines": {
     "node": ">=18"
@@ -26,5 +27,17 @@
     "leaderboard"
   ],
   "license": "MIT",
-  "homepage": "https://agenticbid.lol"
+  "author": "Nevo David <me@nevos.io> (https://github.com/nevo-david)",
+  "homepage": "https://agenticbid.lol",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gitroomhq/agenticbid.git",
+    "directory": "cli"
+  },
+  "bugs": {
+    "url": "https://github.com/gitroomhq/agenticbid/issues"
+  },
+  "publishConfig": {
+    "provenance": true
+  }
 }

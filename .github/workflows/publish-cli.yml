@@ -1,0 +1,32 @@
+name: Publish CLI to npm
+
+on:
+  push:
+    tags:
+      - "cli-v*" # e.g. cli-v0.3.0
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # required for npm provenance (OIDC)
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cli
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      # Trusted publishing needs npm >= 11.5.1
+      - run: npm install -g npm@latest
+
+      - run: npm ci
+
+      - run: npm publish
