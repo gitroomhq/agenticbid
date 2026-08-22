@@ -220,47 +220,49 @@ Mark each `[ ]` → `[x]` as it's completed.
 - [x] Unit tests for pricing rules and tie-breaking (vitest)
 
 ### Phase 4 — Agent registration & auth
-- [ ] `POST /api/v1/agents/register` — accepts `{name}`, generates API key (return once, store sha256 hash), returns `claimUrl` with `claimToken`
-- [ ] Bearer-auth middleware for agent routes (hash lookup, timing-safe compare)
-- [ ] `GET /api/v1/me` — agent's own listings, ranks, totals
-- [ ] Human claim page `/claim/[token]` (simple: mark `claimedAt`, show "verified" badge on listings)
-- [ ] Rate limits: registration per-IP, 1 new listing / 10 min / agent, bid retry throttling
+- [x] `POST /api/v1/agents/register` — accepts `{name}`, generates API key (return once, store sha256 hash), returns `claimUrl` with `claimToken`
+- [x] Bearer-auth middleware for agent routes (hash lookup, timing-safe compare)
+- [x] `GET /api/v1/me` — agent's own listings, ranks, totals
+- [x] Human claim page `/claim/[token]` (simple: mark `claimedAt`, show "verified" badge on listings)
+- [x] Rate limits: registration per-IP, 1 new listing / 10 min / agent, bid retry throttling
 
 ### Phase 5 — x402 payment integration (the crypto part)
-- [ ] Read the v2 server docs in [coinbase/x402](https://github.com/coinbase/x402) and pin the exact API for in-route (non-middleware) use: building `PaymentRequirements`, decoding `X-PAYMENT`, facilitator `verify`/`settle` calls (`@x402/core` exposes these; the static route-map middleware does NOT fit our dynamic prices)
-- [ ] `lib/x402.ts`: helpers — `buildRequirements(chargeUsd, description, resourceUrl)` (atomic-USDC conversion, USDC asset address per network, `payTo`, timeout) + `verifyPayment(header, requirements)` + `settlePayment(...)` against `FACILITATOR_URL`
-- [ ] `POST /api/v1/bids`: validate body → compute charge → no `X-PAYMENT` header ⇒ return 402 + requirements; header present ⇒ check payload matches requirements → facilitator `verify`
-- [ ] On verified payment: DB transaction (upsert listing / insert `Bid` keyed by unique `paymentNonce` / bump `totalBid`) → facilitator `settle` → store `txHash`; roll back the bid if settle fails; respond with new rank + `X-PAYMENT-RESPONSE` receipt header
+- [x] Read the v2 server docs in [coinbase/x402](https://github.com/coinbase/x402) and pin the exact API for in-route (non-middleware) use: building `PaymentRequirements`, decoding `X-PAYMENT`, facilitator `verify`/`settle` calls (`@x402/core` exposes these; the static route-map middleware does NOT fit our dynamic prices)
+- [x] `lib/x402.ts`: helpers — `buildRequirements(chargeUsd, description, resourceUrl)` (atomic-USDC conversion, USDC asset address per network, `payTo`, timeout) + `verifyPayment(header, requirements)` + `settlePayment(...)` against `FACILITATOR_URL`
+- [x] `POST /api/v1/bids`: validate body → compute charge → no `X-PAYMENT` header ⇒ return 402 + requirements; header present ⇒ check payload matches requirements → facilitator `verify`
+- [x] On verified payment: DB transaction (upsert listing / insert `Bid` keyed by unique `paymentNonce` / bump `totalBid`) → facilitator `settle` → store `txHash`; roll back the bid if settle fails; respond with new rank + `X-PAYMENT-RESPONSE` receipt header
+> ⏳ The three remaining items below are implemented in `scripts/test-bid.ts` (`npm run test:bid`) but need the test wallet funded first: send Base Sepolia ETH + ≥20 testnet USDC to `0xC5B32B3ba2b96D5962F1AeAb3cD4bf7B11294EC7` via https://faucet.circle.com, then run the script with `npm run dev` up.
+
 - [ ] Idempotency test: replaying the same `X-PAYMENT` credential must not double-bid
 - [ ] Test-agent script (`scripts/test-bid.ts`): `@x402/fetch` `wrapFetchWithPayment` with the funded Base Sepolia test wallet → full roundtrip: 402 → auto-pay → listing appears; verify USDC arrived at `PAYTO_ADDRESS` on [Base Sepolia explorer](https://sepolia.basescan.org/)
 - [ ] Negative tests: wrong amount, expired authorization, tampered `payTo`, replayed nonce — all rejected with machine-readable `{error, hint}`
 
 ### Phase 6 — Public read APIs
-- [ ] `GET /api/v1/listings` — ranked board, cursor pagination, includes `priceToBeatNumber1` and each row's `minRaise`
-- [ ] `GET /api/v1/listings/[slug]` — single listing with bid history
-- [ ] `GET /api/v1/activity` — recent bids/rank changes
-- [ ] `GET /go/[slug]` — 302 redirect to target URL + async `ClickEvent` insert (no tracking params added)
-- [ ] Trending query: clicks/hour over trailing window from `ClickEvent`
+- [x] `GET /api/v1/listings` — ranked board, cursor pagination, includes `priceToBeatNumber1` and each row's `minRaise`
+- [x] `GET /api/v1/listings/[slug]` — single listing with bid history
+- [x] `GET /api/v1/activity` — recent bids/rank changes
+- [x] `GET /go/[slug]` — 302 redirect to target URL + async `ClickEvent` insert (no tracking params added)
+- [x] Trending query: clicks/hour over trailing window from `ClickEvent`
 
 ### Phase 7 — Frontend (Tailwind)
-- [ ] Leaderboard page `/`: ranked table (rank, title, bid, clicks, age), auto-refresh (poll or SWR), "🤖 Agents: read /skill.md" banner
-- [ ] Trending strip (top by clicks/hour) + live activity feed sidebar
-- [ ] Listing detail page with bid history (+ link each bid's `txHash` to the Base explorer — public, on-chain proof of every rank)
-- [ ] `/rules` and `/about` pages (adapt the rules from §1.1)
-- [ ] "How to bid" page for humans — explains that bidding is agent/x402-only and points at `/skill.md` (e.g. "paste this into Claude Code: *Read https://<domain>/skill.md and get my site listed with a $10 bid*")
-- [ ] Dark, playful visual style; mobile responsive
+- [x] Leaderboard page `/`: ranked table (rank, title, bid, clicks, age), auto-refresh (poll or SWR), "🤖 Agents: read /skill.md" banner
+- [x] Trending strip (top by clicks/hour) + live activity feed sidebar
+- [x] Listing detail page with bid history (+ link each bid's `txHash` to the Base explorer — public, on-chain proof of every rank)
+- [x] `/rules` and `/about` pages (adapt the rules from §1.1)
+- [x] "How to bid" page for humans — explains that bidding is agent/x402-only and points at `/skill.md` (e.g. "paste this into Claude Code: *Read https://<domain>/skill.md and get my site listed with a $10 bid*")
+- [x] Dark, playful visual style; mobile responsive
 
 ### Phase 8 — `skill.md` for agents
-- [ ] Write `public/skill.md` following §5 (prereqs → register → read board → 402 bid flow → rules → next steps), with a runnable `@x402/fetch` example, a raw curl showing the 402 body, and sample responses
-- [ ] Add security section (API key only to this domain; wallet key never leaves the agent) and rate-limit table
+- [x] Write `public/skill.md` following §5 (prereqs → register → read board → 402 bid flow → rules → next steps), with a runnable `@x402/fetch` example, a raw curl showing the 402 body, and sample responses
+- [x] Add security section (API key only to this domain; wallet key never leaves the agent) and rate-limit table
 - [ ] End-to-end dry run: point a fresh Claude Code session at the deployed `skill.md` and have it register + place a testnet bid **using only the file** — fix every ambiguity it stumbles on
 
 ### Phase 9 — Hardening & polish
-- [ ] Zod-validate every API body; consistent JSON error shape `{error, hint}` (agents need machine-readable hints)
-- [ ] Structured logs for every 402 issued / payment verified / settled / bid applied (audit trail; the chain itself is the payment ledger)
-- [ ] Facilitator failure handling: timeouts/retries on `verify`+`settle`, and a reconciliation script that cross-checks `Bid.txHash` rows against on-chain transfers to `PAYTO_ADDRESS`
-- [ ] Abuse controls: URL blocklist review flow, per-agent listing caps, optional admin delist endpoint
-- [ ] Load-test the leaderboard query with 10k listings; add caching (e.g. 5s revalidate) on public reads
+- [x] Zod-validate every API body; consistent JSON error shape `{error, hint}` (agents need machine-readable hints)
+- [x] Structured logs for every 402 issued / payment verified / settled / bid applied (audit trail; the chain itself is the payment ledger)
+- [x] Facilitator failure handling: timeouts/retries on `verify`+`settle`, and a reconciliation script that cross-checks `Bid.txHash` rows against on-chain transfers to `PAYTO_ADDRESS`
+- [x] Abuse controls: URL blocklist review flow, per-agent listing caps, optional admin delist endpoint
+- [x] Load-test the leaderboard query with 10k listings; add caching (e.g. 5s revalidate) on public reads
 
 ### Phase 10 — Deploy & go live
 - [ ] Deploy (Vercel or a Node host; use the Node runtime, not edge, for the bids route)
