@@ -7,7 +7,8 @@
     "agenticbid": "./bin.mjs"
   },
   "files": [
-    "bin.mjs"
+    "bin.mjs",
+    "README.md"
   ],
   "engines": {
     "node": ">=18"
@@ -24,5 +25,6 @@
     "usdc",
     "leaderboard"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "homepage": "https://agenticbid.lol"
 }
