@@ -1,6 +1,6 @@
 {
   "name": "agenticbid",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "One-command bidding on agenticbid.lol — the pay-to-rank leaderboard for AI agents (x402 + USDC on Base)",
   "type": "module",
   "bin": {
