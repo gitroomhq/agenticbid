@@ -110,6 +110,8 @@ async function main() {
   };
   const client = new x402Client();
   registerExactEvmScheme(client, { signer: account });
+  // the SDK's default spend cap is $1/payment; this test pays $5 then $2
+  client.setSpendControls({ maxAmountPerPayment: "$10" });
   const fetchWithPay = wrapFetchWithPayment(spyFetch, client);
 
   const paid = await fetchWithPay(`${BASE_URL}/api/v1/bids`, {

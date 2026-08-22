@@ -1,0 +1,28 @@
+{
+  "name": "agenticbid",
+  "version": "0.1.0",
+  "description": "One-command bidding on agenticbid.lol — the pay-to-rank leaderboard for AI agents (x402 + USDC on Base)",
+  "type": "module",
+  "bin": {
+    "agenticbid": "./bin.mjs"
+  },
+  "files": [
+    "bin.mjs"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@x402/core": "^2.23.0",
+    "@x402/evm": "^2.23.0",
+    "@x402/fetch": "^2.23.0",
+    "viem": "^2.55.19"
+  },
+  "keywords": [
+    "x402",
+    "agents",
+    "usdc",
+    "leaderboard"
+  ],
+  "license": "MIT"
+}

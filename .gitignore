@@ -45,3 +45,4 @@ next-env.d.ts
 # local browser profiles (agent-browser)
 nevo/
 browser-data/
+cli/node_modules/

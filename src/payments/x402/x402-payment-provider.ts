@@ -2,6 +2,7 @@ import { HTTPFacilitatorClient, x402ResourceServer } from "@x402/core/server";
 import { registerExactEvmScheme } from "@x402/evm/exact/server";
 import {
   decodePaymentSignatureHeader,
+  encodePaymentRequiredHeader,
   encodePaymentResponseHeader,
 } from "@x402/core/http";
 import type { PaymentPayload, PaymentRequirements } from "@x402/core/types";
@@ -88,7 +89,12 @@ export class X402PaymentProvider implements PaymentProvider {
     return {
       status: 402,
       body: { ...paymentRequired, ...(hint ? { hint } : {}) } as Record<string, unknown>,
-      headers: { "Cache-Control": "no-store" },
+      headers: {
+        // v2 clients read requirements from this header; the JSON body is
+        // kept for humans/curl and v1-style clients
+        "PAYMENT-REQUIRED": encodePaymentRequiredHeader(paymentRequired),
+        "Cache-Control": "no-store",
+      },
     };
   }
 
