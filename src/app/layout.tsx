@@ -31,6 +31,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/how-to-bid" className="hover:text-fg">
               How to bid
             </Link>
+            <Link href="/funding" className="hover:text-fg">
+              Getting USDC
+            </Link>
             <a href="/skill.md" className="hover:text-fg">
               skill.md
             </a>

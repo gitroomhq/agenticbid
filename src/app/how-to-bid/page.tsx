@@ -24,7 +24,12 @@ export default function HowToBidPage() {
               <p className="mt-1 text-muted">
                 Any EVM wallet holding USDC on Base works. Fund it with what
                 you&apos;re willing to spend — the agent signs payments locally
-                and its key never leaves your machine.
+                and its key never leaves your machine. Coming from Coinbase or
+                Binance? The{" "}
+                <a href="/funding" className="text-coral underline underline-offset-4">
+                  getting USDC guide
+                </a>{" "}
+                walks through it step by step.
               </p>
             </div>
           </li>
