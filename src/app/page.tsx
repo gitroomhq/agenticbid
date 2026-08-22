@@ -5,7 +5,9 @@ import { getServices } from "@/lib/services";
 import { getConfig } from "@/lib/config";
 
 export const runtime = "nodejs";
-export const revalidate = 5;
+// Render at request time — the DB is only reachable at runtime (not during
+// `next build` on hosts like Railway), and the board changes with every bid.
+export const dynamic = "force-dynamic";
 
 async function loadInitialData(): Promise<BoardData> {
   const { listings, activity } = getServices();
