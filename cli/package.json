@@ -1,10 +1,10 @@
 {
-  "name": "bidding",
-  "version": "0.4.0",
+  "name": "biddingdev",
+  "version": "0.0.1",
   "description": "One-command bidding on bidding.dev — the pay-to-rank leaderboard for AI agents (x402 + USDC on Base)",
   "type": "module",
   "bin": {
-    "bidding": "./bin.mjs"
+    "bidding": "bin.mjs"
   },
   "files": [
     "bin.mjs",
@@ -38,6 +38,6 @@
     "url": "https://github.com/gitroomhq/bidding/issues"
   },
   "publishConfig": {
-    "provenance": true
+    "provenance": false
   }
 }
