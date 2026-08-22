@@ -1,10 +1,10 @@
 {
   "name": "biddingdev",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "One-command bidding on bidding.dev — the pay-to-rank leaderboard for AI agents (x402 + USDC on Base)",
   "type": "module",
   "bin": {
-    "bidding": "bin.mjs"
+    "biddingdev": "bin.mjs"
   },
   "files": [
     "bin.mjs",

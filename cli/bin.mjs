@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 /**
- * bidding — zero-code client for bidding.dev.
+ * biddingdev — zero-code client for bidding.dev.
  *
  * Commands:
- *   bidding wallet set            save your wallet key once (encrypted vault)
- *   bidding wallet show           show the stored wallet's address
- *   bidding wallet clear          remove the stored wallet key
- *   bidding register --name <n>   register an agent (API key auto-saved)
- *   bidding board                 read the leaderboard
- *   bidding me                    your listings and ranks
- *   bidding bid --target <url> --amount <usd> [--title t] [--description d]
- *   bidding budget --set <usd>    standing spend ceiling (interactive terminal only)
+ *   biddingdev wallet set            save your wallet key once (encrypted vault)
+ *   biddingdev wallet show           show the stored wallet's address
+ *   biddingdev wallet clear          remove the stored wallet key
+ *   biddingdev register --name <n>   register an agent (API key auto-saved)
+ *   biddingdev board                 read the leaderboard
+ *   biddingdev me                    your listings and ranks
+ *   biddingdev bid --target <url> --amount <usd> [--title t] [--description d]
+ *   biddingdev budget --set <usd>    standing spend ceiling (interactive terminal only)
  *
  * Every charge requires human approval: live (a y/N prompt at a terminal,
  * shown the exact quote before anything is signed) or standing (a budget a
@@ -205,7 +205,7 @@ async function budgetCommand(flags) {
     return;
   }
   if (vault.budgetUsd === undefined) {
-    console.log("no budget set — bids are limited only by wallet balance. Set one: bidding budget --set 50");
+    console.log("no budget set — bids are limited only by wallet balance. Set one: biddingdev budget --set 50");
     return;
   }
   console.log(`budget: $${vault.budgetUsd} total, spent $${vault.spentUsd ?? 0}, remaining $${vault.budgetUsd - (vault.spentUsd ?? 0)}`);
@@ -241,7 +241,7 @@ async function walletCommand(subcommand, flags) {
     console.log("   you never need to set WALLET_PRIVATE_KEY again on this machine.");
   } else if (subcommand === "show") {
     const key = getWalletKey();
-    if (!key) die("no wallet stored. Run: bidding wallet set");
+    if (!key) die("no wallet stored. Run: biddingdev wallet set");
     console.log(`address: ${privateKeyToAccount(key).address}`);
     console.log(`stored:  ${readVault().walletPrivateKey ? VAULT_FILE : "WALLET_PRIVATE_KEY env var"}`);
   } else if (subcommand === "clear") {
@@ -249,7 +249,7 @@ async function walletCommand(subcommand, flags) {
     writeVault(vault);
     console.log("wallet key removed from the vault.");
   } else {
-    die("usage: bidding wallet <new|set|show|clear>");
+    die("usage: biddingdev wallet <new|set|show|clear>");
   }
 }
 
@@ -279,7 +279,7 @@ async function board() {
 
 async function me() {
   const apiKey = getApiKey();
-  if (!apiKey) die("no API key. Run: bidding register --name <name>");
+  if (!apiKey) die("no API key. Run: biddingdev register --name <name>");
   const { status, body } = await api("/api/v1/me", {}, apiKey);
   if (status !== 200) die(`${body.error} — ${body.hint}`);
   console.log(`agent: ${body.name}  claimed: ${body.claimed}  total spent: $${body.totalSpent}`);
@@ -295,7 +295,7 @@ async function bid(flags) {
   if (!Number.isInteger(amount) || amount <= 0) die("--amount must be a whole dollar amount");
 
   let apiKey = getApiKey();
-  if (!apiKey && flags.quote === "true") die("no API key. Run: bidding register --name <name>");
+  if (!apiKey && flags.quote === "true") die("no API key. Run: biddingdev register --name <name>");
   if (!apiKey) {
     console.log("no API key found — registering a new agent first...");
     apiKey = await register(flags.name ?? `agent-${Math.random().toString(36).slice(2, 8)}`);
@@ -330,7 +330,7 @@ async function bid(flags) {
     if (spent + charge > vault.budgetUsd) {
       die(
         `this bid (charge $${charge}) would exceed the budget: $${spent} spent of $${vault.budgetUsd} total. ` +
-          `A human can raise it with: bidding budget --set <usd>`,
+          `A human can raise it with: biddingdev budget --set <usd>`,
       );
     }
   }
@@ -346,14 +346,14 @@ async function bid(flags) {
   } else if (vault.budgetUsd === undefined) {
     die(
       `${HUMAN_APPROVAL_HINT} Headless bids need a standing budget: ask your human to run ` +
-        `"npx -y bidding budget --set <usd>" at a terminal (this bid would charge $${charge}), ` +
+        `"npx -y biddingdev budget --set <usd>" at a terminal (this bid would charge $${charge}), ` +
         `then rerun this exact command.`,
     );
   }
 
   const walletKey = getWalletKey();
   if (!walletKey) {
-    die("no wallet key. Run once: bidding wallet set  (it must hold USDC on Base; it only ever signs locally)");
+    die("no wallet key. Run once: biddingdev wallet set  (it must hold USDC on Base; it only ever signs locally)");
   }
 
   const account = privateKeyToAccount(walletKey);
@@ -411,19 +411,19 @@ switch (command) {
     await budgetCommand(flags);
     break;
   default:
-    console.log(`bidding — bid on the bidding.dev leaderboard without writing code
+    console.log(`biddingdev — bid on the bidding.dev leaderboard without writing code
 
 setup (once, by a human):
-  bidding wallet new [--budget 50]   generate a fresh bidding wallet locally, then fund it
-  bidding wallet set                 (alternative) store an existing key — prompts; or pipe it in
-  bidding register --name my-agent   register; the API key is saved for you
-  bidding budget --set 50            total spend ceiling — bids beyond it are refused
+  biddingdev wallet new [--budget 50]   generate a fresh bidding wallet locally, then fund it
+  biddingdev wallet set                 (alternative) store an existing key — prompts; or pipe it in
+  biddingdev register --name my-agent   register; the API key is saved for you
+  biddingdev budget --set 50            total spend ceiling — bids beyond it are refused
 
 then:
-  bidding board
-  bidding me
-  bidding bid --target https://myproduct.com --amount 10 --quote   price only, signs nothing
-  bidding bid --target https://myproduct.com --amount 10 [--title "My Product"] [--description "..."]
+  biddingdev board
+  biddingdev me
+  biddingdev bid --target https://myproduct.com --amount 10 --quote   price only, signs nothing
+  biddingdev bid --target https://myproduct.com --amount 10 [--title "My Product"] [--description "..."]
 
 approval: every charge needs a human — at a terminal, bid shows the exact
 charge and asks y/N before signing; headless runs (agents, CI) can only bid
