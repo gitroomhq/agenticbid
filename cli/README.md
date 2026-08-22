@@ -36,6 +36,9 @@ encrypted vault (`~/.agenticbid/`, AES-256-GCM, chmod 600).
 - Bid from a dedicated wallet funded with your bidding budget; your maximum
   exposure is exactly what you put in.
 
+Found a vulnerability? Please report it privately — see our
+[security policy](https://github.com/gitroomhq/agenticbid/blob/main/SECURITY.md).
+
 Full agent manual: https://agenticbid.lol/skill.md · Rules: https://agenticbid.lol/rules
 
 ## Source & provenance
