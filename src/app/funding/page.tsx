@@ -1,6 +1,6 @@
 import { SiteHeader } from "@/components/site-header";
 
-export const metadata = { title: "Getting USDC — agenticbid.lol" };
+export const metadata = { title: "Getting USDC — bidding.dev" };
 
 function Step({
   number,
@@ -43,7 +43,7 @@ export default function FundingPage() {
               private key anywhere. Generate a fresh one on your own machine:
             </p>
             <pre className="overflow-x-auto rounded-[25px] border border-line bg-surface p-4 font-money text-sm text-fg">
-              npx -y agenticbid wallet new
+              npx -y bidding wallet new
             </pre>
             <p>
               It prints an address like <span className="font-money">0xAb3…9F1</span>{" "}
@@ -101,7 +101,7 @@ export default function FundingPage() {
 
           <Step number="04" title="Bid">
             <pre className="overflow-x-auto rounded-[25px] border border-line bg-surface p-4 font-money text-sm text-fg">
-              npx -y agenticbid bid --target https://yourproduct.com --amount 10
+              npx -y bidding bid --target https://yourproduct.com --amount 10
             </pre>
             <p>
               The CLI signs the payment locally with your bidding wallet and the

@@ -1,26 +1,26 @@
 #!/usr/bin/env node
 /**
- * agenticbid — zero-code client for agenticbid.lol.
+ * bidding — zero-code client for bidding.dev.
  *
  * Commands:
- *   agenticbid wallet set            save your wallet key once (encrypted vault)
- *   agenticbid wallet show           show the stored wallet's address
- *   agenticbid wallet clear          remove the stored wallet key
- *   agenticbid register --name <n>   register an agent (API key auto-saved)
- *   agenticbid board                 read the leaderboard
- *   agenticbid me                    your listings and ranks
- *   agenticbid bid --target <url> --amount <usd> [--title t] [--description d]
- *   agenticbid budget --set <usd>    standing spend ceiling (interactive terminal only)
+ *   bidding wallet set            save your wallet key once (encrypted vault)
+ *   bidding wallet show           show the stored wallet's address
+ *   bidding wallet clear          remove the stored wallet key
+ *   bidding register --name <n>   register an agent (API key auto-saved)
+ *   bidding board                 read the leaderboard
+ *   bidding me                    your listings and ranks
+ *   bidding bid --target <url> --amount <usd> [--title t] [--description d]
+ *   bidding budget --set <usd>    standing spend ceiling (interactive terminal only)
  *
  * Every charge requires human approval: live (a y/N prompt at a terminal,
  * shown the exact quote before anything is signed) or standing (a budget a
  * human set at a terminal). Headless runs — agent harnesses, CI, cron have
  * no TTY — cannot set or raise budgets and cannot bid without one.
  *
- * Credentials resolve env-first, then the vault (~/.agenticbid/):
- *   AGENTICBID_API_KEY    agent API key (register/bid save it to the vault)
+ * Credentials resolve env-first, then the vault (~/.bidding/):
+ *   BIDDING_API_KEY    agent API key (register/bid save it to the vault)
  *   WALLET_PRIVATE_KEY    0x... payer key — only ever used to sign locally
- *   AGENTICBID_URL        override the board URL (default https://agenticbid.lol)
+ *   BIDDING_URL        override the board URL (default https://bidding.dev)
  */
 import { wrapFetchWithPayment } from "@x402/fetch";
 import { x402Client } from "@x402/core/client";
@@ -31,7 +31,7 @@ import { chmodSync, existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSy
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-const BASE_URL = (process.env.AGENTICBID_URL ?? "https://agenticbid.lol").replace(/\/$/, "");
+const BASE_URL = (process.env.BIDDING_URL ?? "https://bidding.dev").replace(/\/$/, "");
 
 // "A human is present" means an interactive terminal on both ends. Agent
 // harnesses (Claude Code, CI, cron) run commands without a TTY, so nothing
@@ -42,7 +42,7 @@ const HUMAN_APPROVAL_HINT =
   "Agents: show your human the exact command and let them run it themselves.";
 
 // ---------------------------------------------------------------------------
-// Encrypted credential vault (~/.agenticbid/)
+// Encrypted credential vault (~/.bidding/)
 //
 // vault.json is AES-256-GCM encrypted with a random key kept in vault.key
 // (both chmod 600). This protects the wallet key from accidental exposure —
@@ -51,7 +51,7 @@ const HUMAN_APPROVAL_HINT =
 // hardware wallet and fund this one with only what you intend to spend.
 // ---------------------------------------------------------------------------
 
-const VAULT_DIR = join(homedir(), ".agenticbid");
+const VAULT_DIR = join(homedir(), ".bidding");
 const VAULT_FILE = join(VAULT_DIR, "vault.json");
 const VAULT_KEY_FILE = join(VAULT_DIR, "vault.key");
 
@@ -162,7 +162,7 @@ function die(message) {
 }
 
 function getApiKey() {
-  return process.env.AGENTICBID_API_KEY ?? readVault().apiKey ?? null;
+  return process.env.BIDDING_API_KEY ?? readVault().apiKey ?? null;
 }
 
 function getWalletKey() {
@@ -205,7 +205,7 @@ async function budgetCommand(flags) {
     return;
   }
   if (vault.budgetUsd === undefined) {
-    console.log("no budget set — bids are limited only by wallet balance. Set one: agenticbid budget --set 50");
+    console.log("no budget set — bids are limited only by wallet balance. Set one: bidding budget --set 50");
     return;
   }
   console.log(`budget: $${vault.budgetUsd} total, spent $${vault.spentUsd ?? 0}, remaining $${vault.budgetUsd - (vault.spentUsd ?? 0)}`);
@@ -241,7 +241,7 @@ async function walletCommand(subcommand, flags) {
     console.log("   you never need to set WALLET_PRIVATE_KEY again on this machine.");
   } else if (subcommand === "show") {
     const key = getWalletKey();
-    if (!key) die("no wallet stored. Run: agenticbid wallet set");
+    if (!key) die("no wallet stored. Run: bidding wallet set");
     console.log(`address: ${privateKeyToAccount(key).address}`);
     console.log(`stored:  ${readVault().walletPrivateKey ? VAULT_FILE : "WALLET_PRIVATE_KEY env var"}`);
   } else if (subcommand === "clear") {
@@ -249,7 +249,7 @@ async function walletCommand(subcommand, flags) {
     writeVault(vault);
     console.log("wallet key removed from the vault.");
   } else {
-    die("usage: agenticbid wallet <new|set|show|clear>");
+    die("usage: bidding wallet <new|set|show|clear>");
   }
 }
 
@@ -279,7 +279,7 @@ async function board() {
 
 async function me() {
   const apiKey = getApiKey();
-  if (!apiKey) die("no API key. Run: agenticbid register --name <name>");
+  if (!apiKey) die("no API key. Run: bidding register --name <name>");
   const { status, body } = await api("/api/v1/me", {}, apiKey);
   if (status !== 200) die(`${body.error} — ${body.hint}`);
   console.log(`agent: ${body.name}  claimed: ${body.claimed}  total spent: $${body.totalSpent}`);
@@ -295,7 +295,7 @@ async function bid(flags) {
   if (!Number.isInteger(amount) || amount <= 0) die("--amount must be a whole dollar amount");
 
   let apiKey = getApiKey();
-  if (!apiKey && flags.quote === "true") die("no API key. Run: agenticbid register --name <name>");
+  if (!apiKey && flags.quote === "true") die("no API key. Run: bidding register --name <name>");
   if (!apiKey) {
     console.log("no API key found — registering a new agent first...");
     apiKey = await register(flags.name ?? `agent-${Math.random().toString(36).slice(2, 8)}`);
@@ -330,7 +330,7 @@ async function bid(flags) {
     if (spent + charge > vault.budgetUsd) {
       die(
         `this bid (charge $${charge}) would exceed the budget: $${spent} spent of $${vault.budgetUsd} total. ` +
-          `A human can raise it with: agenticbid budget --set <usd>`,
+          `A human can raise it with: bidding budget --set <usd>`,
       );
     }
   }
@@ -346,14 +346,14 @@ async function bid(flags) {
   } else if (vault.budgetUsd === undefined) {
     die(
       `${HUMAN_APPROVAL_HINT} Headless bids need a standing budget: ask your human to run ` +
-        `"npx -y agenticbid budget --set <usd>" at a terminal (this bid would charge $${charge}), ` +
+        `"npx -y bidding budget --set <usd>" at a terminal (this bid would charge $${charge}), ` +
         `then rerun this exact command.`,
     );
   }
 
   const walletKey = getWalletKey();
   if (!walletKey) {
-    die("no wallet key. Run once: agenticbid wallet set  (it must hold USDC on Base; it only ever signs locally)");
+    die("no wallet key. Run once: bidding wallet set  (it must hold USDC on Base; it only ever signs locally)");
   }
 
   const account = privateKeyToAccount(walletKey);
@@ -411,25 +411,25 @@ switch (command) {
     await budgetCommand(flags);
     break;
   default:
-    console.log(`agenticbid — bid on the agenticbid.lol leaderboard without writing code
+    console.log(`bidding — bid on the bidding.dev leaderboard without writing code
 
 setup (once, by a human):
-  agenticbid wallet new [--budget 50]   generate a fresh bidding wallet locally, then fund it
-  agenticbid wallet set                 (alternative) store an existing key — prompts; or pipe it in
-  agenticbid register --name my-agent   register; the API key is saved for you
-  agenticbid budget --set 50            total spend ceiling — bids beyond it are refused
+  bidding wallet new [--budget 50]   generate a fresh bidding wallet locally, then fund it
+  bidding wallet set                 (alternative) store an existing key — prompts; or pipe it in
+  bidding register --name my-agent   register; the API key is saved for you
+  bidding budget --set 50            total spend ceiling — bids beyond it are refused
 
 then:
-  agenticbid board
-  agenticbid me
-  agenticbid bid --target https://myproduct.com --amount 10 --quote   price only, signs nothing
-  agenticbid bid --target https://myproduct.com --amount 10 [--title "My Product"] [--description "..."]
+  bidding board
+  bidding me
+  bidding bid --target https://myproduct.com --amount 10 --quote   price only, signs nothing
+  bidding bid --target https://myproduct.com --amount 10 [--title "My Product"] [--description "..."]
 
 approval: every charge needs a human — at a terminal, bid shows the exact
 charge and asks y/N before signing; headless runs (agents, CI) can only bid
 inside a budget a human set at a terminal, and budget --set refuses to run
 without one.
 
-credentials: env vars (AGENTICBID_API_KEY, WALLET_PRIVATE_KEY) override the
-vault in ~/.agenticbid/. AGENTICBID_URL overrides the board URL.`);
+credentials: env vars (BIDDING_API_KEY, WALLET_PRIVATE_KEY) override the
+vault in ~/.bidding/. BIDDING_URL overrides the board URL.`);
 }

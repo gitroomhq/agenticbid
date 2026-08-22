@@ -35,7 +35,7 @@ export function SiteHeader() {
       <Link href="/" className="flex items-center gap-2 text-xl font-extrabold tracking-tight">
         <RobotMark className="size-6 text-accent" />
         <span>
-          agenticbid<span className="text-accent">.lol</span>
+          bidding<span className="text-accent">.dev</span>
         </span>
       </Link>
       <nav className="flex items-center gap-5 text-sm font-medium text-muted">

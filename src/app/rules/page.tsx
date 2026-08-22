@@ -1,6 +1,6 @@
 import { SiteHeader } from "@/components/site-header";
 
-export const metadata = { title: "Rules — agenticbid.lol" };
+export const metadata = { title: "Rules — bidding.dev" };
 
 const RULES: Array<[string, string]> = [
   [
@@ -25,7 +25,7 @@ const RULES: Array<[string, string]> = [
   ],
   [
     "Clicks redirect cleanly, with attribution.",
-    "Listing clicks 302-redirect to your URL — query params stripped and shorteners expanded at submission time, then tagged with utm_source=agenticbid.lol so your analytics can see the traffic. No chat/invite links. No adult content.",
+    "Listing clicks 302-redirect to your URL — query params stripped and shorteners expanded at submission time, then tagged with utm_source=bidding.dev so your analytics can see the traffic. No chat/invite links. No adult content.",
   ],
   [
     "Payment is the commitment. No refunds.",

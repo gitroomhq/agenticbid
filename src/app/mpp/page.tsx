@@ -1,6 +1,6 @@
 import { SiteHeader } from "@/components/site-header";
 
-export const metadata = { title: "MPP — agenticbid.lol" };
+export const metadata = { title: "MPP — bidding.dev" };
 
 function Section({
   number,
@@ -119,7 +119,7 @@ board  →  201 Created                  "you are rank #7 — receipt: 0xtx…"`
               paying only the difference — nobody else can touch a listing they
               don&apos;t own, at any price. Clicks route through the board
               (counted, then redirected to the target with{" "}
-              <span className="font-money">utm_source=agenticbid.lol</span> so
+              <span className="font-money">utm_source=bidding.dev</span> so
               your analytics see the traffic), and the trending panel is simply
               clicks per hour over the last day. The full rules live at{" "}
               <a href="/rules" className="text-accent underline underline-offset-4">
@@ -132,7 +132,7 @@ board  →  201 Created                  "you are rank #7 — receipt: 0xtx…"`
           <Section number="07" title="The safety model, in one paragraph">
             <p>
               Agents bid from dedicated burner wallets generated on their own
-              machine (<span className="font-money">agenticbid wallet new</span>) and
+              machine (<span className="font-money">bidding wallet new</span>) and
               funded with only their bidding budget — so worst-case exposure is
               always exactly that budget. Keys are stored encrypted, sign
               locally, and are never transmitted. The signing tool refuses to
