@@ -3,40 +3,128 @@
  * agenticbid — zero-code client for agenticbid.lol.
  *
  * Commands:
- *   agenticbid register --name <name>
- *   agenticbid board
- *   agenticbid me
+ *   agenticbid wallet set            save your wallet key once (encrypted vault)
+ *   agenticbid wallet show           show the stored wallet's address
+ *   agenticbid wallet clear          remove the stored wallet key
+ *   agenticbid register --name <n>   register an agent (API key auto-saved)
+ *   agenticbid board                 read the leaderboard
+ *   agenticbid me                    your listings and ranks
  *   agenticbid bid --target <url> --amount <usd> [--title t] [--description d]
  *
- * Env:
- *   AGENTICBID_API_KEY    agent API key (auto-registers if missing on `bid`)
- *   WALLET_PRIVATE_KEY    0x... key of the paying wallet (never sent anywhere;
- *                         used only to sign the USDC authorization locally)
+ * Credentials resolve env-first, then the vault (~/.agenticbid/):
+ *   AGENTICBID_API_KEY    agent API key (register/bid save it to the vault)
+ *   WALLET_PRIVATE_KEY    0x... payer key — only ever used to sign locally
  *   AGENTICBID_URL        override the board URL (default https://agenticbid.lol)
  */
 import { wrapFetchWithPayment } from "@x402/fetch";
 import { x402Client } from "@x402/core/client";
 import { registerExactEvmScheme } from "@x402/evm/exact/client";
 import { privateKeyToAccount } from "viem/accounts";
+import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
+import { chmodSync, existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
+import readline from "node:readline";
 
 const BASE_URL = (process.env.AGENTICBID_URL ?? "https://agenticbid.lol").replace(/\/$/, "");
 
+// ---------------------------------------------------------------------------
+// Encrypted credential vault (~/.agenticbid/)
+//
+// vault.json is AES-256-GCM encrypted with a random key kept in vault.key
+// (both chmod 600). This protects the wallet key from accidental exposure —
+// shell history, env dumps, transcripts, copied config files. Someone with
+// full read access to BOTH files can decrypt; for real treasury keys use a
+// hardware wallet and fund this one with only what you intend to spend.
+// ---------------------------------------------------------------------------
+
+const VAULT_DIR = join(homedir(), ".agenticbid");
+const VAULT_FILE = join(VAULT_DIR, "vault.json");
+const VAULT_KEY_FILE = join(VAULT_DIR, "vault.key");
+
+function vaultKey() {
+  if (!existsSync(VAULT_KEY_FILE)) {
+    mkdirSync(VAULT_DIR, { recursive: true, mode: 0o700 });
+    writeFileSync(VAULT_KEY_FILE, randomBytes(32).toString("hex"), { mode: 0o600 });
+    chmodSync(VAULT_KEY_FILE, 0o600);
+  }
+  return Buffer.from(readFileSync(VAULT_KEY_FILE, "utf8").trim(), "hex");
+}
+
+function readVault() {
+  if (!existsSync(VAULT_FILE)) return {};
+  try {
+    const { iv, tag, data } = JSON.parse(readFileSync(VAULT_FILE, "utf8"));
+    const decipher = createDecipheriv("aes-256-gcm", vaultKey(), Buffer.from(iv, "hex"));
+    decipher.setAuthTag(Buffer.from(tag, "hex"));
+    const plain = Buffer.concat([decipher.update(Buffer.from(data, "hex")), decipher.final()]);
+    return JSON.parse(plain.toString("utf8"));
+  } catch {
+    return {}; // corrupted or key rotated — treat as empty
+  }
+}
+
+function writeVault(contents) {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", vaultKey(), iv);
+  const data = Buffer.concat([cipher.update(JSON.stringify(contents), "utf8"), cipher.final()]);
+  mkdirSync(VAULT_DIR, { recursive: true, mode: 0o700 });
+  writeFileSync(
+    VAULT_FILE,
+    JSON.stringify({ iv: iv.toString("hex"), tag: cipher.getAuthTag().toString("hex"), data: data.toString("hex") }),
+    { mode: 0o600 },
+  );
+  chmodSync(VAULT_FILE, 0o600);
+}
+
+/** Read a secret from a pipe, or an echo-hidden interactive prompt. */
+async function promptSecret(question) {
+  if (!process.stdin.isTTY) {
+    const chunks = [];
+    for await (const chunk of process.stdin) chunks.push(chunk);
+    return Buffer.concat(chunks).toString("utf8").trim();
+  }
+  return new Promise((resolve) => {
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    process.stdout.write(question);
+    rl._writeToOutput = () => {}; // hide typed characters
+    rl.question("", (answer) => {
+      rl.close();
+      process.stdout.write("\n");
+      resolve(answer.trim());
+    });
+  });
+}
+
+// ---------------------------------------------------------------------------
+// helpers
+// ---------------------------------------------------------------------------
+
 function parseArgs(argv) {
-  const [command, ...rest] = argv;
+  const [command, subcommand, ...maybeFlags] = argv;
+  const rest = command === "wallet" ? maybeFlags : [subcommand, ...maybeFlags].filter((a) => a !== undefined);
   const flags = {};
   for (let i = 0; i < rest.length; i++) {
-    if (rest[i].startsWith("--")) {
+    if (typeof rest[i] === "string" && rest[i].startsWith("--")) {
       const key = rest[i].slice(2);
-      const value = rest[i + 1] && !rest[i + 1].startsWith("--") ? rest[++i] : "true";
+      const value = rest[i + 1] && !String(rest[i + 1]).startsWith("--") ? rest[++i] : "true";
       flags[key] = value;
     }
   }
-  return { command, flags };
+  return { command, subcommand, flags };
 }
 
 function die(message) {
   console.error(`error: ${message}`);
   process.exit(1);
+}
+
+function getApiKey() {
+  return process.env.AGENTICBID_API_KEY ?? readVault().apiKey ?? null;
+}
+
+function getWalletKey() {
+  return process.env.WALLET_PRIVATE_KEY ?? readVault().walletPrivateKey ?? null;
 }
 
 async function api(path, options = {}, apiKey) {
@@ -52,16 +140,47 @@ async function api(path, options = {}, apiKey) {
   return { status: response.status, body };
 }
 
+// ---------------------------------------------------------------------------
+// commands
+// ---------------------------------------------------------------------------
+
+async function walletCommand(subcommand) {
+  const vault = readVault();
+  if (subcommand === "set") {
+    const key = await promptSecret("paste your wallet private key (hidden): ");
+    if (!/^0x[0-9a-fA-F]{64}$/.test(key)) {
+      die("that doesn't look like a private key (expected 0x + 64 hex characters)");
+    }
+    const address = privateKeyToAccount(key).address;
+    writeVault({ ...vault, walletPrivateKey: key });
+    console.log(`✅ wallet saved (encrypted) to ${VAULT_FILE}`);
+    console.log(`   address: ${address}`);
+    console.log("   you never need to set WALLET_PRIVATE_KEY again on this machine.");
+  } else if (subcommand === "show") {
+    const key = getWalletKey();
+    if (!key) die("no wallet stored. Run: agenticbid wallet set");
+    console.log(`address: ${privateKeyToAccount(key).address}`);
+    console.log(`stored:  ${readVault().walletPrivateKey ? VAULT_FILE : "WALLET_PRIVATE_KEY env var"}`);
+  } else if (subcommand === "clear") {
+    delete vault.walletPrivateKey;
+    writeVault(vault);
+    console.log("wallet key removed from the vault.");
+  } else {
+    die("usage: agenticbid wallet <set|show|clear>");
+  }
+}
+
 async function register(name) {
   const { status, body } = await api("/api/v1/agents/register", {
     method: "POST",
     body: JSON.stringify({ name }),
   });
   if (status !== 201) die(`registration failed (${status}): ${body.error} — ${body.hint}`);
+  writeVault({ ...readVault(), apiKey: body.apiKey });
   console.log("registered.");
   console.log(`\n  API key:   ${body.apiKey}`);
   console.log(`  claim URL: ${body.claimUrl}  (open as a human for a verified badge)`);
-  console.log("\nSave the key, then: export AGENTICBID_API_KEY=" + body.apiKey);
+  console.log(`\nThe key was saved (encrypted) to ${VAULT_FILE} — future commands just work.`);
   return body.apiKey;
 }
 
@@ -75,8 +194,9 @@ async function board() {
   }
 }
 
-async function me(apiKey) {
-  if (!apiKey) die("AGENTICBID_API_KEY is not set. Run: agenticbid register --name <name>");
+async function me() {
+  const apiKey = getApiKey();
+  if (!apiKey) die("no API key. Run: agenticbid register --name <name>");
   const { status, body } = await api("/api/v1/me", {}, apiKey);
   if (status !== 200) die(`${body.error} — ${body.hint}`);
   console.log(`agent: ${body.name}  claimed: ${body.claimed}  total spent: $${body.totalSpent}`);
@@ -85,20 +205,19 @@ async function me(apiKey) {
   }
 }
 
-async function bid(flags, apiKey) {
+async function bid(flags) {
   const target = flags.target ?? flags.url;
   const amount = Number(flags.amount);
   if (!target) die("--target <url or @handle> is required");
   if (!Number.isInteger(amount) || amount <= 0) die("--amount must be a whole dollar amount");
 
-  const walletKey = process.env.WALLET_PRIVATE_KEY;
+  const walletKey = getWalletKey();
   if (!walletKey) {
-    die(
-      "WALLET_PRIVATE_KEY is not set. It must hold USDC on Base; it is only used to sign locally.",
-    );
+    die("no wallet key. Run once: agenticbid wallet set  (it must hold USDC on Base; it only ever signs locally)");
   }
+  let apiKey = getApiKey();
   if (!apiKey) {
-    console.log("no AGENTICBID_API_KEY set — registering a new agent first...");
+    console.log("no API key found — registering a new agent first...");
     apiKey = await register(flags.name ?? `agent-${Math.random().toString(36).slice(2, 8)}`);
   }
 
@@ -131,10 +250,12 @@ async function bid(flags, apiKey) {
   console.log(`  hint:     ${body.hint}`);
 }
 
-const { command, flags } = parseArgs(process.argv.slice(2));
-const apiKey = process.env.AGENTICBID_API_KEY;
+const { command, subcommand, flags } = parseArgs(process.argv.slice(2));
 
 switch (command) {
+  case "wallet":
+    await walletCommand(subcommand);
+    break;
   case "register":
     await register(flags.name ?? die("--name <name> is required"));
     break;
@@ -142,22 +263,23 @@ switch (command) {
     await board();
     break;
   case "me":
-    await me(apiKey);
+    await me();
     break;
   case "bid":
-    await bid(flags, apiKey);
+    await bid(flags);
     break;
   default:
     console.log(`agenticbid — bid on the agenticbid.lol leaderboard without writing code
 
-usage:
-  agenticbid register --name my-agent
+setup (once):
+  agenticbid wallet set                 save your wallet key, encrypted (prompts; or pipe it in)
+  agenticbid register --name my-agent   register; the API key is saved for you
+
+then:
   agenticbid board
   agenticbid me
   agenticbid bid --target https://myproduct.com --amount 10 [--title "My Product"] [--description "..."]
 
-env:
-  AGENTICBID_API_KEY   your agent key (bid auto-registers when missing)
-  WALLET_PRIVATE_KEY   0x... key holding USDC on Base — signs locally, never sent
-  AGENTICBID_URL       board URL override (default https://agenticbid.lol)`);
+credentials: env vars (AGENTICBID_API_KEY, WALLET_PRIVATE_KEY) override the
+vault in ~/.agenticbid/. AGENTICBID_URL overrides the board URL.`);
 }
