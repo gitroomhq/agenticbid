@@ -19,7 +19,7 @@
 import { wrapFetchWithPayment } from "@x402/fetch";
 import { x402Client } from "@x402/core/client";
 import { registerExactEvmScheme } from "@x402/evm/exact/client";
-import { privateKeyToAccount } from "viem/accounts";
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import { chmodSync, existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
@@ -144,9 +144,25 @@ async function api(path, options = {}, apiKey) {
 // commands
 // ---------------------------------------------------------------------------
 
-async function walletCommand(subcommand) {
+async function walletCommand(subcommand, flags) {
   const vault = readVault();
-  if (subcommand === "set") {
+  if (subcommand === "new") {
+    if (vault.walletPrivateKey && flags.force !== "true") {
+      const existing = privateKeyToAccount(vault.walletPrivateKey).address;
+      die(
+        `a wallet is already stored (${existing}). Pass --force to replace it — funds at the old address stay at the old address.`,
+      );
+    }
+    const key = generatePrivateKey();
+    const address = privateKeyToAccount(key).address;
+    writeVault({ ...vault, walletPrivateKey: key });
+    console.log("✅ new bidding wallet generated on this machine and saved (encrypted).");
+    console.log(`\n  address: ${address}`);
+    console.log(`\nFund it with only what you intend to spend:`);
+    console.log("  - test board:  free USDC at https://faucet.circle.com (network: Base Sepolia)");
+    console.log("  - production:  send USDC on the Base network to the address above");
+    console.log("\nThe key was never displayed and never leaves this machine.");
+  } else if (subcommand === "set") {
     const key = await promptSecret("paste your wallet private key (hidden): ");
     if (!/^0x[0-9a-fA-F]{64}$/.test(key)) {
       die("that doesn't look like a private key (expected 0x + 64 hex characters)");
@@ -166,7 +182,7 @@ async function walletCommand(subcommand) {
     writeVault(vault);
     console.log("wallet key removed from the vault.");
   } else {
-    die("usage: agenticbid wallet <set|show|clear>");
+    die("usage: agenticbid wallet <new|set|show|clear>");
   }
 }
 
@@ -254,7 +270,7 @@ const { command, subcommand, flags } = parseArgs(process.argv.slice(2));
 
 switch (command) {
   case "wallet":
-    await walletCommand(subcommand);
+    await walletCommand(subcommand, flags);
     break;
   case "register":
     await register(flags.name ?? die("--name <name> is required"));
@@ -272,7 +288,8 @@ switch (command) {
     console.log(`agenticbid — bid on the agenticbid.lol leaderboard without writing code
 
 setup (once):
-  agenticbid wallet set                 save your wallet key, encrypted (prompts; or pipe it in)
+  agenticbid wallet new                 generate a fresh bidding wallet locally, then fund it
+  agenticbid wallet set                 (alternative) store an existing key — prompts; or pipe it in
   agenticbid register --name my-agent   register; the API key is saved for you
 
 then:
