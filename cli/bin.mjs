@@ -144,6 +144,29 @@ async function api(path, options = {}, apiKey) {
 // commands
 // ---------------------------------------------------------------------------
 
+function setBudget(vault, flags) {
+  if (flags.budget === undefined) return vault;
+  const budget = Number(flags.budget);
+  if (!Number.isInteger(budget) || budget <= 0) die("--budget must be a whole dollar amount");
+  return { ...vault, budgetUsd: budget, spentUsd: vault.spentUsd ?? 0 };
+}
+
+async function budgetCommand(flags) {
+  const vault = readVault();
+  if (flags.set) {
+    const budget = Number(flags.set);
+    if (!Number.isInteger(budget) || budget <= 0) die("--set must be a whole dollar amount");
+    writeVault({ ...vault, budgetUsd: budget, spentUsd: vault.spentUsd ?? 0 });
+    console.log(`budget set to $${budget} total (spent so far: $${vault.spentUsd ?? 0}).`);
+    return;
+  }
+  if (vault.budgetUsd === undefined) {
+    console.log("no budget set — bids are limited only by wallet balance. Set one: agenticbid budget --set 50");
+    return;
+  }
+  console.log(`budget: $${vault.budgetUsd} total, spent $${vault.spentUsd ?? 0}, remaining $${vault.budgetUsd - (vault.spentUsd ?? 0)}`);
+}
+
 async function walletCommand(subcommand, flags) {
   const vault = readVault();
   if (subcommand === "new") {
@@ -155,7 +178,7 @@ async function walletCommand(subcommand, flags) {
     }
     const key = generatePrivateKey();
     const address = privateKeyToAccount(key).address;
-    writeVault({ ...vault, walletPrivateKey: key });
+    writeVault(setBudget({ ...vault, walletPrivateKey: key }, flags));
     console.log("✅ new bidding wallet generated on this machine and saved (encrypted).");
     console.log(`\n  address: ${address}`);
     console.log(`\nFund it with only what you intend to spend:`);
@@ -227,6 +250,36 @@ async function bid(flags) {
   if (!target) die("--target <url or @handle> is required");
   if (!Number.isInteger(amount) || amount <= 0) die("--amount must be a whole dollar amount");
 
+  // --quote: fetch the exact price without signing or paying anything.
+  if (flags.quote === "true") {
+    const apiKeyForQuote = getApiKey();
+    if (!apiKeyForQuote) die("no API key. Run: agenticbid register --name <name>");
+    const { status, body } = await api(
+      "/api/v1/bids",
+      { method: "POST", body: JSON.stringify({ targetUrl: target, amount }) },
+      apiKeyForQuote,
+    );
+    if (status !== 402) die(`${body.error} — ${body.hint}`);
+    console.log(`quote (nothing signed, nothing paid):`);
+    console.log(`  kind:      ${body.quote.kind}`);
+    console.log(`  charge:    $${body.quote.chargeUsd}`);
+    console.log(`  new total: $${body.quote.newTotal}`);
+    console.log(`  to beat #1: $${body.quote.priceToBeatNumber1}`);
+    return;
+  }
+
+  // hard budget cap: the human's total spend ceiling, enforced cumulatively
+  const vault = readVault();
+  if (vault.budgetUsd !== undefined) {
+    const spent = vault.spentUsd ?? 0;
+    if (spent + amount > vault.budgetUsd) {
+      die(
+        `this bid ($${amount}) would exceed the budget: $${spent} spent of $${vault.budgetUsd} total. ` +
+          `A human can raise it with: agenticbid budget --set <usd>`,
+      );
+    }
+  }
+
   const walletKey = getWalletKey();
   if (!walletKey) {
     die("no wallet key. Run once: agenticbid wallet set  (it must hold USDC on Base; it only ever signs locally)");
@@ -259,6 +312,10 @@ async function bid(flags) {
   if (!response.ok || !body.ok) {
     die(`bid failed (${response.status}): ${body.error ?? "payment_required"} — ${body.hint ?? JSON.stringify(body)}`);
   }
+  if (readVault().budgetUsd !== undefined) {
+    const fresh = readVault();
+    writeVault({ ...fresh, spentUsd: (fresh.spentUsd ?? 0) + body.chargedUsd });
+  }
   console.log(`\n✅ ${body.kind === "RAISE" ? "raised" : "listed"} — charged $${body.chargedUsd}`);
   console.log(`  rank:     #${body.listing.rank}  (total $${body.listing.totalBid})`);
   console.log(`  tx:       ${body.explorerUrl}`);
@@ -284,17 +341,22 @@ switch (command) {
   case "bid":
     await bid(flags);
     break;
+  case "budget":
+    await budgetCommand(flags);
+    break;
   default:
     console.log(`agenticbid — bid on the agenticbid.lol leaderboard without writing code
 
-setup (once):
-  agenticbid wallet new                 generate a fresh bidding wallet locally, then fund it
+setup (once, by a human):
+  agenticbid wallet new [--budget 50]   generate a fresh bidding wallet locally, then fund it
   agenticbid wallet set                 (alternative) store an existing key — prompts; or pipe it in
   agenticbid register --name my-agent   register; the API key is saved for you
+  agenticbid budget --set 50            total spend ceiling — bids beyond it are refused
 
 then:
   agenticbid board
   agenticbid me
+  agenticbid bid --target https://myproduct.com --amount 10 --quote   price only, signs nothing
   agenticbid bid --target https://myproduct.com --amount 10 [--title "My Product"] [--description "..."]
 
 credentials: env vars (AGENTICBID_API_KEY, WALLET_PRIVATE_KEY) override the
