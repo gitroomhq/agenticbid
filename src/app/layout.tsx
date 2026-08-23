@@ -28,7 +28,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             className="font-semibold text-accent underline underline-offset-4 hover:text-accentdeep"
           >
             Postiz.com
-          </a>
+          </a>{" "}
+          <span className="text-muted">— agentic social media scheduler</span>
         </div>
         {children}
         <footer className="mx-auto mt-16 flex max-w-6xl flex-wrap items-center justify-between gap-4 border-t border-line px-6 py-8 text-sm text-muted">
