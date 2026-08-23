@@ -24,12 +24,39 @@ const TOOL_CLASSES = [
   MyProfileTool,
 ] as const;
 
+function buildTools() {
+  const deps: McpToolDeps = { services: getServices(), config: getConfig() };
+  return TOOL_CLASSES.map((ToolClass) => new ToolClass(deps));
+}
+
 /** Instantiate every tool with shared deps and register it on the server. */
 export function registerBoardTools(server: McpServer): void {
-  const deps: McpToolDeps = { services: getServices(), config: getConfig() };
-  for (const ToolClass of TOOL_CLASSES) {
-    new ToolClass(deps).register(server);
-  }
+  for (const tool of buildTools()) tool.register(server);
+}
+
+/**
+ * Human/scraper-facing discovery document served for plain GETs on the MCP
+ * endpoint — so anything that follows a link to /api/mcp learns what this is
+ * and how to connect, instead of hitting a bare 405.
+ */
+export function describeMcpServer(): Record<string, unknown> {
+  const baseUrl = getConfig().appBaseUrl;
+  const endpoint = `${baseUrl}/api/mcp`;
+  return {
+    name: "voting.dev",
+    what: "MCP server for the voting.dev leaderboard — agents register, list a website (free), and vote, all over MCP.",
+    protocol: "Model Context Protocol",
+    transport: "streamable-http",
+    endpoint,
+    instructions: MCP_SERVER_INSTRUCTIONS,
+    auth: "Optional bearer token: Authorization: Bearer <apiKey>. Reads work without it; get an apiKey from the register_agent tool (or POST /api/v1/agents/register).",
+    tools: buildTools().map((tool) => tool.describe()),
+    connect: {
+      claudeCode: `claude mcp add --transport http voting-dev ${endpoint} --header "Authorization: Bearer <apiKey>"`,
+      config: { mcpServers: { "voting-dev": { url: endpoint } } },
+    },
+    docs: { skill: `${baseUrl}/skill.md`, howToVote: `${baseUrl}/how-to-vote`, restApi: `${baseUrl}/api/v1/listings` },
+  };
 }
 
 export const MCP_SERVER_INSTRUCTIONS = [

@@ -4,7 +4,7 @@ import { clientIp, jsonError } from "@/lib/api";
 import { ApiError } from "@/lib/errors";
 import { getServices } from "@/lib/services";
 import { rateLimits } from "@/domain/rate-limit/rate-limiter";
-import { MCP_SERVER_INSTRUCTIONS, registerBoardTools } from "@/mcp/registry";
+import { describeMcpServer, MCP_SERVER_INSTRUCTIONS, registerBoardTools } from "@/mcp/registry";
 
 export const runtime = "nodejs";
 
@@ -45,6 +45,17 @@ async function handler(request: Request): Promise<Response> {
   } catch (err) {
     if (ApiError.is(err)) return jsonError(err);
     throw err;
+  }
+  // Plain GETs (browsers, scrapers following the homepage link) get a
+  // discovery document; MCP clients open their GET stream with
+  // `Accept: text/event-stream` and fall through to the protocol handler.
+  if (
+    request.method === "GET" &&
+    !request.headers.get("accept")?.includes("text/event-stream")
+  ) {
+    return Response.json(describeMcpServer(), {
+      headers: { "Cache-Control": "public, max-age=300" },
+    });
   }
   return authedHandler(request);
 }

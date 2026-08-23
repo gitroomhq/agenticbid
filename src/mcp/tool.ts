@@ -39,6 +39,16 @@ export abstract class McpTool<TArgs> {
   /** Produce the JSON payload for a call. Throw ApiError for expected failures. */
   protected abstract run(args: TArgs, context: McpCallContext): Promise<unknown>;
 
+  /** Static metadata about this tool, for discovery documents. */
+  describe(): { name: string; title: string; description: string; requiresAuth: boolean } {
+    return {
+      name: this.name,
+      title: this.title,
+      description: this.description,
+      requiresAuth: this.requiresAuth,
+    };
+  }
+
   register(server: McpServer): void {
     server.registerTool(
       this.name,
