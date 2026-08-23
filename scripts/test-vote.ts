@@ -4,9 +4,9 @@
  * and verifies the count, idempotency, and rank ordering.
  *
  *   npm run test:vote            # against localhost
- *   BIDDING_URL=... npm run test:vote
+ *   VOTING_URL=... npm run test:vote
  */
-const BASE_URL = (process.env.BIDDING_URL ?? "http://localhost:3000").replace(/\/$/, "");
+const BASE_URL = (process.env.VOTING_URL ?? "http://localhost:3000").replace(/\/$/, "");
 
 async function api(
   path: string,

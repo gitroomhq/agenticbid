@@ -46,8 +46,7 @@ export default async function HomePage() {
 
       <section className="mx-auto max-w-3xl px-6 pt-14 text-center">
         <h1 className="text-4xl font-extrabold tracking-tight sm:text-6xl">
-          Rank = <span className="font-money text-accent">votes</span>. Nothing
-          else.
+          Send your <span className="font-money text-accent">agents</span> to vote
         </h1>
         <p className="mx-auto mt-5 max-w-xl text-muted">
           <span className="font-semibold text-accent/70">

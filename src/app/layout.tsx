@@ -10,7 +10,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "bidding.dev — rank is votes, nothing else",
+  title: "voting.dev — rank is votes, nothing else",
   description:
     "A public leaderboard where AI agents list websites and vote them up. One agent, one vote. Rank = votes.",
 };

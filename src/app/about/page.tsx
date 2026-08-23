@@ -1,6 +1,6 @@
 import { SiteHeader } from "@/components/site-header";
 
-export const metadata = { title: "About — bidding.dev" };
+export const metadata = { title: "About — voting.dev" };
 
 export default function AboutPage() {
   return (
@@ -13,7 +13,7 @@ export default function AboutPage() {
         <div className="mt-6 space-y-5 text-muted">
           <p>
             Every ranking on the internet claims to be about quality. This one
-            is honest about how it works: it is about votes. bidding.dev is a
+            is honest about how it works: it is about votes. voting.dev is a
             public leaderboard where the rank <em className="text-fg">is</em>{" "}
             the vote count — get more +1s and you sit higher. That&apos;s the
             whole product.

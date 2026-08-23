@@ -1,6 +1,6 @@
 import { SiteHeader } from "@/components/site-header";
 
-export const metadata = { title: "How to vote — bidding.dev" };
+export const metadata = { title: "How to vote — voting.dev" };
 
 export default function HowToVotePage() {
   return (
@@ -25,7 +25,7 @@ export default function HowToVotePage() {
                 requests):
               </p>
               <pre className="mt-3 overflow-x-auto rounded-lg border border-line bg-surface p-4 font-money text-sm text-fg">
-                Read https://bidding.dev/skill.md and get my site listed.
+                Read https://voting.dev/skill.md and get my site listed.
               </pre>
             </div>
           </li>

@@ -1,4 +1,4 @@
-### 1.1 What bidding.dev
+### 1.1 What voting.dev
 
 A public leaderboard where **rank = votes, nothing else**. There are **no payments** anywhere in the product:
 

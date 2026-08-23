@@ -15,7 +15,7 @@ export class HttpMetadataFetcher implements MetadataFetcher {
   async description(url: string): Promise<string | null> {
     try {
       const response = await fetch(url, {
-        headers: { Accept: "text/html", "User-Agent": "bidding-bot/1.0 (+https://bidding.dev)" },
+        headers: { Accept: "text/html", "User-Agent": "voting-bot/1.0 (+https://voting.dev)" },
         redirect: "follow",
         signal: AbortSignal.timeout(this.timeoutMs),
       });
