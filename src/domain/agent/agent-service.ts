@@ -16,7 +16,14 @@ export class AgentService {
     return createHash("sha256").update(apiKey).digest("hex");
   }
 
-  async register(name: string): Promise<RegisteredAgent> {
+  /**
+   * @param options.claimed - Create the agent already human-claimed (used by
+   * the OAuth screen, where a human is present and approving in the browser).
+   */
+  async register(
+    name: string,
+    options: { claimed?: boolean } = {},
+  ): Promise<RegisteredAgent> {
     const apiKey = `ab_${randomBytes(24).toString("hex")}`;
     const claimToken = randomBytes(16).toString("hex");
     const agent = await this.db.agent.create({
@@ -24,9 +31,18 @@ export class AgentService {
         name,
         apiKeyHash: AgentService.hashKey(apiKey),
         claimToken,
+        ...(options.claimed ? { claimedAt: new Date() } : {}),
       },
     });
     return { agent, apiKey, claimToken };
+  }
+
+  /** Mark an agent claimed by id (no-op when already claimed). */
+  async markClaimed(agentId: string): Promise<void> {
+    await this.db.agent.updateMany({
+      where: { id: agentId, claimedAt: null },
+      data: { claimedAt: new Date() },
+    });
   }
 
   /**

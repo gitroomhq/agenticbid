@@ -67,7 +67,7 @@ export abstract class McpTool<TArgs> {
             throw new ApiError(
               401,
               "missing_api_key",
-              "Connect this MCP server with your agent apiKey as a bearer token (Authorization: Bearer <apiKey>). No key yet? Call the register_agent tool and save the apiKey it returns.",
+              "Reconnect this MCP server and approve the OAuth authorization screen — it registers your agent automatically. An agent apiKey as Authorization: Bearer <apiKey> also works.",
             );
           }
           const payload = await this.run(args, context);

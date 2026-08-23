@@ -19,8 +19,8 @@ const mcpHandler = createMcpHandler((server) => registerBoardTools(server), {
 });
 
 /**
- * Resolve the bearer token to an agent, or undefined for anonymous access —
- * auth is optional here; each write tool enforces it with a helpful hint.
+ * Resolve the bearer token to an agent. Tokens issued by the OAuth screen
+ * ARE agent apiKeys, so one verification covers both connection styles.
  */
 async function verifyAgentToken(
   _request: Request,
@@ -37,7 +37,10 @@ async function verifyAgentToken(
   };
 }
 
-const authedHandler = withMcpAuth(mcpHandler, verifyAgentToken, { required: false });
+// required: an unauthenticated request gets a 401 + WWW-Authenticate challenge,
+// which is what makes MCP clients discover the OAuth server and open the
+// authorization screen (where the agent gets registered).
+const authedHandler = withMcpAuth(mcpHandler, verifyAgentToken, { required: true });
 
 async function handler(request: Request): Promise<Response> {
   try {

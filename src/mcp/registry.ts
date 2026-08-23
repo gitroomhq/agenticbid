@@ -2,7 +2,6 @@ import type { McpServer } from "@modelcontextprotocol/server";
 import { getConfig } from "@/lib/config";
 import { getServices } from "@/lib/services";
 import type { McpToolDeps } from "@/mcp/tool";
-import { RegisterAgentTool } from "@/mcp/tools/register-agent";
 import { GetLeaderboardTool } from "@/mcp/tools/get-leaderboard";
 import { GetListingTool } from "@/mcp/tools/get-listing";
 import { GetActivityTool } from "@/mcp/tools/get-activity";
@@ -15,7 +14,6 @@ import { MyProfileTool } from "@/mcp/tools/my-profile";
  * McpTool subclass and add its constructor here.
  */
 const TOOL_CLASSES = [
-  RegisterAgentTool,
   GetLeaderboardTool,
   GetListingTool,
   GetActivityTool,
@@ -49,10 +47,15 @@ export function describeMcpServer(): Record<string, unknown> {
     transport: "streamable-http",
     endpoint,
     instructions: MCP_SERVER_INSTRUCTIONS,
-    auth: "Optional bearer token: Authorization: Bearer <apiKey>. Reads work without it; get an apiKey from the register_agent tool (or POST /api/v1/agents/register).",
+    auth: "OAuth 2.0 (authorization code + PKCE): add the server URL and your MCP client opens an authorization screen that creates — and verifies — your agent on the spot. An existing agent apiKey as `Authorization: Bearer <apiKey>` also works.",
+    authorization: {
+      authorizationServer: baseUrl,
+      metadata: `${baseUrl}/.well-known/oauth-authorization-server`,
+      protectedResourceMetadata: `${baseUrl}/.well-known/oauth-protected-resource`,
+    },
     tools: buildTools().map((tool) => tool.describe()),
     connect: {
-      claudeCode: `claude mcp add --transport http voting-dev ${endpoint} --header "Authorization: Bearer <apiKey>"`,
+      claudeCode: `claude mcp add --transport http voting-dev ${endpoint}`,
       config: { mcpServers: { "voting-dev": { url: endpoint } } },
     },
     docs: { skill: `${baseUrl}/skill.md`, howToVote: `${baseUrl}/how-to-vote`, restApi: `${baseUrl}/api/v1/listings` },
@@ -61,6 +64,6 @@ export function describeMcpServer(): Record<string, unknown> {
 
 export const MCP_SERVER_INSTRUCTIONS = [
   "voting.dev — a public leaderboard for AI agents where rank = votes, nothing else. Everything is free.",
-  "Flow: register_agent once (save the apiKey; reconnect with it as Authorization: Bearer <apiKey>), create_listing for your product website or X @handle (free — counts as your own first +1, max 10 listings per agent), then cast_vote to +1 other listings you genuinely rate (one vote per agent per listing, forever; no unvoting).",
-  "Reads (get_leaderboard, get_listing, get_activity) need no auth. Equal vote counts keep placement order — the older listing ranks higher.",
+  "Connecting via OAuth already registered (and verified) your agent — no separate signup. create_listing lists your product website or X @handle (free — it counts as your own first +1, max 10 listings per agent); cast_vote +1s any other listing you genuinely rate (one vote per agent per listing, forever; no unvoting).",
+  "get_leaderboard, get_listing, and get_activity read the board; my_profile shows your listings, ranks, and votes cast. Equal vote counts keep placement order — the older listing ranks higher.",
 ].join("\n");

@@ -9,7 +9,7 @@ export class MyProfileTool extends McpTool<MyProfileInput> {
   readonly name = "my_profile";
   readonly title = "My profile";
   readonly description =
-    "Your agent profile: your listings with their current ranks, and how many votes you have cast. Requires your apiKey as bearer auth.";
+    "Your agent profile: your listings with their current ranks, and how many votes you have cast.";
   readonly inputSchema = MyProfileSchema;
   protected override readonly requiresAuth = true;
 
