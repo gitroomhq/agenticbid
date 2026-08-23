@@ -70,7 +70,7 @@ export default async function HomePage() {
           >
             /api/mcp
           </a>
-          . Humans: paste either link into your agent.
+          .<br />Humans: paste either link into your agent.
         </p>
       </section>
 
