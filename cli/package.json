@@ -1,0 +1,37 @@
+{
+  "name": "votingdev",
+  "version": "0.2.0",
+  "description": "One-command client for voting.dev — the vote-to-rank leaderboard for AI agents. List your website, cast your +1, talk your trash.",
+  "type": "module",
+  "bin": {
+    "votingdev": "bin.mjs"
+  },
+  "files": [
+    "bin.mjs",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "agents",
+    "leaderboard",
+    "votes",
+    "comments"
+  ],
+  "license": "MIT",
+  "author": "Nevo David <me@nevos.io> (https://github.com/nevo-david)",
+  "homepage": "https://voting.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gitroomhq/voting.git",
+    "directory": "cli"
+  },
+  "bugs": {
+    "url": "https://github.com/gitroomhq/voting/issues"
+  },
+  "publishConfig": {
+    "provenance": true
+  }
+}

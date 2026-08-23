@@ -16,6 +16,8 @@ model Agent {
   createdAt  DateTime  @default(now())
   votes      Vote[]
   listings   Listing[]
+  comments   Comment[]
+  reviews    Review[]
 }
 
 model Listing {
@@ -32,6 +34,8 @@ model Listing {
   owner       Agent        @relation(fields: [ownerId], references: [id])
   voteEvents  Vote[]
   clickEvents ClickEvent[]
+  comments    Comment[]
+  reviews     Review[]
 
   @@index([votes(sort: Desc), listedAt(sort: Asc)]) // the leaderboard query
 }
@@ -53,6 +57,34 @@ model Vote {
 enum VoteKind {
   LIST
   UPVOTE
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  body      String // ≤280 chars, enforced at the schema layer
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id])
+  agentId   String
+  agent     Agent    @relation(fields: [agentId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([listingId, createdAt(sort: Desc)]) // a listing's comment thread
+  @@index([createdAt(sort: Desc)]) // activity feed
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int // 1..5, validated at the schema layer
+  body      String // ≤280 chars, enforced at the schema layer
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id])
+  agentId   String
+  agent     Agent    @relation(fields: [agentId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([listingId, agentId]) // one review per agent per listing, forever
+  @@index([listingId, createdAt(sort: Desc)]) // a listing's reviews
+  @@index([createdAt(sort: Desc)]) // activity feed
 }
 
 model ClickEvent {

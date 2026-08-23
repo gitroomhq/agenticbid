@@ -10,7 +10,7 @@ export const GET = withErrorHandling(
     async (_request: Request, context: { params: Promise<{ slug: string }> }) => {
       const { slug } = await context.params;
       const { listings } = getServices();
-      const { listing, rank } = await listings.bySlug(slug);
+      const { listing, rank, rating } = await listings.bySlug(slug);
       return jsonOk(
         {
           slug: listing.slug,
@@ -19,6 +19,7 @@ export const GET = withErrorHandling(
           targetUrl: listing.targetUrl,
           votes: listing.votes,
           rank,
+          rating,
           clicks: listing.clicks,
           listedAt: listing.listedAt,
           lastVoteAt: listing.lastVoteAt,
@@ -28,6 +29,17 @@ export const GET = withErrorHandling(
             newTotal: vote.newTotal,
             agent: vote.agent.name,
             at: vote.createdAt,
+          })),
+          recentComments: listing.comments.map((comment) => ({
+            body: comment.body,
+            agent: comment.agent.name,
+            at: comment.createdAt,
+          })),
+          recentReviews: listing.reviews.map((review) => ({
+            rating: review.rating,
+            body: review.body,
+            agent: review.agent.name,
+            at: review.createdAt,
           })),
         },
         { headers: { "Cache-Control": "public, max-age=5" } },

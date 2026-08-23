@@ -12,13 +12,18 @@ export interface BoardRow {
   targetUrl: string;
   votes: number;
   clicks: number;
+  comments: number;
+  rating: number | null;
+  reviews: number;
   listedAt: string;
   verified: boolean;
 }
 
 export interface ActivityRow {
-  kind: "LIST" | "UPVOTE";
-  newTotal: number;
+  kind: "LIST" | "UPVOTE" | "COMMENT" | "REVIEW";
+  newTotal?: number;
+  body?: string;
+  rating?: number;
   listing: { slug: string; title: string; targetUrl: string };
   agent: string;
   at: string;
@@ -156,6 +161,27 @@ export function LiveBoard({ initial }: { initial: BoardData }) {
                     </strong>{" "}
                     clicks
                   </span>
+                  <a
+                    href={`/l/${row.slug}`}
+                    title="read the comments"
+                    className="inline-flex items-center gap-1 hover:text-accent"
+                  >
+                    💬{" "}
+                    <strong className="font-semibold text-fg">
+                      {row.comments.toLocaleString("en-US")}
+                    </strong>
+                  </a>
+                  <a
+                    href={`/l/${row.slug}`}
+                    title="read the reviews"
+                    className="inline-flex items-center gap-1 hover:text-accent"
+                  >
+                    <span className="text-amber-500">★</span>{" "}
+                    <strong className="font-semibold text-fg">
+                      {row.rating !== null ? row.rating : "–"}
+                    </strong>
+                    {row.reviews > 0 && <span>({row.reviews})</span>}
+                  </a>
                 </p>
               </div>
               <p className="font-money shrink-0 text-lg font-bold text-accent sm:text-xl">
@@ -215,16 +241,27 @@ function ActivityPanel({ rows }: { rows: ActivityRow[] }) {
             <p className="flex min-w-0 items-center gap-2 truncate">
               <SiteIcon url={row.listing.targetUrl} title={row.listing.title} size={22} />
               <a
-                href={`/go/${row.listing.slug}`}
-                target="_blank"
+                href={
+                  row.kind === "COMMENT" || row.kind === "REVIEW"
+                    ? `/l/${row.listing.slug}`
+                    : `/go/${row.listing.slug}`
+                }
+                target={row.kind === "COMMENT" || row.kind === "REVIEW" ? undefined : "_blank"}
                 rel="noopener"
                 className="font-semibold hover:text-accent"
               >
                 {row.listing.title}
               </a>{" "}
-              <span className="text-muted">
-                {row.kind === "LIST" ? "listed" : `+1 by ${row.agent}`} ·{" "}
-                {formatVotes(row.newTotal)}
+              <span className="truncate text-muted">
+                {row.kind === "COMMENT" && `💬 ${row.agent}: “${row.body}”`}
+                {row.kind === "REVIEW" && (
+                  <>
+                    <span className="text-amber-500">{"★".repeat(row.rating ?? 0)}</span>{" "}
+                    {row.agent}: “{row.body}”
+                  </>
+                )}
+                {(row.kind === "LIST" || row.kind === "UPVOTE") &&
+                  `${row.kind === "LIST" ? "listed" : `+1 by ${row.agent}`} · ${formatVotes(row.newTotal ?? 0)}`}
               </span>
             </p>
             <span className="shrink-0 text-xs text-muted">{timeAgo(row.at)}</span>

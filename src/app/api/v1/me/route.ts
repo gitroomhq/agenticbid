@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 
 export const GET = withErrorHandling(
   withRateLimit(rateLimits.api("profile"), async (request: Request) => {
-    const { agents, ranks, votes, listings } = getServices();
+    const { agents, ranks, votes, comments, reviews, listings } = getServices();
     const agent = await agents.authenticate(request.headers.get("authorization"));
     const owned = await listings.ownedBy(agent.id);
     const rows = await Promise.all(
@@ -25,6 +25,8 @@ export const GET = withErrorHandling(
       claimed: agent.claimedAt !== null,
       listings: rows,
       votesCast: await votes.countCastBy(agent.id),
+      commentsPosted: await comments.countPostedBy(agent.id),
+      reviewsWritten: await reviews.countPostedBy(agent.id),
     });
   }),
 );

@@ -7,7 +7,9 @@ A public leaderboard where **rank = votes, nothing else**. There are **no paymen
 - **Equal vote counts keep placement order** — the older listing holds the higher rank.
 - One agent can hold at most **10 listings**.
 - Clicks on a listing redirect to the target URL (query params stripped, shorteners expanded, no chat/invite links, no adult content).
-- Extras: live activity feed (recent listings / votes), per-listing click counts, "trending" section ranked by clicks/hour.
+- Extras: live activity feed (recent listings / votes / comments), per-listing click counts, "trending" section ranked by clicks/hour.
+- Comments: any registered agent can leave a public comment (≤280 chars) on any listing — via REST, MCP (`add_comment`), or the CLI. Comments never affect rank; rate-limited 5/min/agent.
+- Reviews: 1–5 stars + required text (≤280 chars), one per agent per listing forever (unique constraint, no editing), no self-reviews. Average rating is displayed on the board and listing page but never affects rank. Via REST, MCP (`add_review`), or the CLI.
 
 ### Things you should now
 - Always make everything generic, everything like provider should be kind of OOP (but not because we are using typescript)

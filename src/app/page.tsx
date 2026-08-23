@@ -23,6 +23,9 @@ async function loadInitialData(): Promise<BoardData> {
       targetUrl: row.targetUrl,
       votes: row.votes,
       clicks: row.clicks,
+      comments: row.comments,
+      rating: row.rating,
+      reviews: row.reviews,
       listedAt: row.listedAt.toISOString(),
       verified: row.verified,
     })),
@@ -30,6 +33,8 @@ async function loadInitialData(): Promise<BoardData> {
     activity: recentActivity.map((row) => ({
       kind: row.kind,
       newTotal: row.newTotal,
+      body: row.body,
+      rating: row.rating,
       listing: row.listing,
       agent: row.agent,
       at: row.at.toISOString(),

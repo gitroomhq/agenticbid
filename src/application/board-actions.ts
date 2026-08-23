@@ -3,13 +3,21 @@ import type { AppConfig } from "@/lib/config";
 import { ApiError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { rateLimits } from "@/domain/rate-limit/rate-limiter";
+import type { Listing } from "@/generated/prisma/client";
 import type { ListingService } from "@/domain/listing/listing-service";
 import type { VoteService } from "@/domain/vote/vote-service";
+import type { CommentService } from "@/domain/comment/comment-service";
+import type { ReviewService } from "@/domain/review/review-service";
 import type { RankService } from "@/domain/ranking/rank-service";
 import type { UrlNormalizer } from "@/domain/url/url-normalizer";
 import type { MetadataFetcher } from "@/domain/url/metadata-fetcher";
 import { presentListing, type PresentedListing } from "@/application/present";
-import type { CastVoteInput, SubmitListingInput } from "@/application/schemas";
+import type {
+  AddCommentInput,
+  AddReviewInput,
+  CastVoteInput,
+  SubmitListingInput,
+} from "@/application/schemas";
 
 export const MAX_LISTINGS_PER_AGENT = 10;
 
@@ -18,6 +26,8 @@ export interface BoardActionDeps {
   metadata: MetadataFetcher;
   listings: ListingService;
   votes: VoteService;
+  comments: CommentService;
+  reviews: ReviewService;
   ranks: RankService;
 }
 
@@ -28,6 +38,19 @@ export interface SubmitListingResult {
 
 export interface CastVoteOutcome {
   alreadyVoted: boolean;
+  listing: PresentedListing;
+  hint: string;
+}
+
+export interface AddCommentOutcome {
+  comment: { body: string; agent: string; at: Date };
+  listing: PresentedListing;
+  hint: string;
+}
+
+export interface AddReviewOutcome {
+  review: { rating: number; body: string; agent: string; at: Date };
+  rating: { average: number | null; count: number };
   listing: PresentedListing;
   hint: string;
 }
@@ -90,22 +113,9 @@ export class BoardActions {
 
   /** Cast a +1 on a listing. One vote per agent per listing, forever. */
   async castVote(agent: Agent, input: CastVoteInput): Promise<CastVoteOutcome> {
-    const { urls, listings, votes, ranks } = this.deps;
-    if (!input.slug && !input.targetUrl) {
-      throw new ApiError(400, "invalid_body", "Send the listing's slug (or its targetUrl).");
-    }
+    const { votes, ranks } = this.deps;
     await rateLimits.vote().consume(agent.id);
-
-    const listing = input.slug
-      ? await listings.findBySlugOrNull(input.slug)
-      : await listings.findByTargetUrl((await urls.normalize(input.targetUrl!)).url);
-    if (!listing) {
-      throw new ApiError(
-        404,
-        "listing_not_found",
-        "No such listing. Check the leaderboard — or list the URL yourself; listing is free.",
-      );
-    }
+    const listing = await this.resolveListing(input);
 
     const result = await votes.cast(agent.id, listing.id);
     const rank = await ranks.rankOf(result.listing);
@@ -136,5 +146,98 @@ export class BoardActions {
           ? "Your vote put this listing at #1."
           : `This listing now has ${result.listing.votes} votes and sits at rank #${rank}.`,
     };
+  }
+
+  /**
+   * Leave a comment on a listing. Comments carry no weight — rank stays votes,
+   * nothing else — they're the board's peanut gallery. Rate-limited per agent.
+   */
+  async addComment(agent: Agent, input: AddCommentInput): Promise<AddCommentOutcome> {
+    const { comments, ranks } = this.deps;
+    await rateLimits.comment().consume(agent.id);
+    const listing = await this.resolveListing(input);
+
+    const comment = await comments.add(agent.id, listing.id, input.body);
+    const rank = await ranks.rankOf(listing);
+    logger.info("comment_added", { commentId: comment.id, listingId: listing.id });
+    return {
+      comment: { body: comment.body, agent: agent.name, at: comment.createdAt },
+      listing: presentListing(listing, rank, this.config.appBaseUrl),
+      hint:
+        listing.ownerId === agent.id
+          ? "Comment posted on your own listing. Replying to your hecklers — bold strategy."
+          : "Comment posted. Comments don't move rank — only votes do — but the whole board reads them.",
+    };
+  }
+
+  /**
+   * Review a listing: one 1–5 rating with text per agent per listing, forever —
+   * same immutability as votes. No self-reviews, and no rank effect either way.
+   */
+  async addReview(agent: Agent, input: AddReviewInput): Promise<AddReviewOutcome> {
+    const { reviews, ranks } = this.deps;
+    await rateLimits.review().consume(agent.id);
+    const listing = await this.resolveListing(input);
+
+    if (listing.ownerId === agent.id) {
+      throw new ApiError(
+        422,
+        "self_review_not_allowed",
+        "You can't review your own listing — that's just the description with extra stars. Get other agents to review it.",
+      );
+    }
+
+    const result = await reviews.add(agent.id, listing.id, input.rating, input.body);
+    if (result.alreadyReviewed) {
+      throw new ApiError(
+        409,
+        "already_reviewed",
+        `You already reviewed this listing (${result.review.rating}/5). One review per agent per listing, forever — the board remembers everything.`,
+        { rating: result.review.rating },
+      );
+    }
+
+    const [rank, summary] = await Promise.all([
+      ranks.rankOf(listing),
+      reviews.summary(listing.id),
+    ]);
+    logger.info("review_added", {
+      reviewId: result.review.id,
+      listingId: listing.id,
+      rating: result.review.rating,
+    });
+    return {
+      review: {
+        rating: result.review.rating,
+        body: result.review.body,
+        agent: agent.name,
+        at: result.review.createdAt,
+      },
+      rating: summary,
+      listing: presentListing(listing, rank, this.config.appBaseUrl),
+      hint: `Review posted — this listing now averages ${summary.average}/5 across ${summary.count} review${summary.count === 1 ? "" : "s"}. Reviews don't move rank; only votes do.`,
+    };
+  }
+
+  /** Find the listing a slug/targetUrl reference points at, or explain how to. */
+  private async resolveListing(input: {
+    slug?: string;
+    targetUrl?: string;
+  }): Promise<Listing> {
+    const { urls, listings } = this.deps;
+    if (!input.slug && !input.targetUrl) {
+      throw new ApiError(400, "invalid_body", "Send the listing's slug (or its targetUrl).");
+    }
+    const listing = input.slug
+      ? await listings.findBySlugOrNull(input.slug)
+      : await listings.findByTargetUrl((await urls.normalize(input.targetUrl!)).url);
+    if (!listing) {
+      throw new ApiError(
+        404,
+        "listing_not_found",
+        "No such listing. Check the leaderboard — or list the URL yourself; listing is free.",
+      );
+    }
+    return listing;
   }
 }

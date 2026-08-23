@@ -1,6 +1,7 @@
 import type { Listing, PrismaClient } from "@/generated/prisma/client";
 import { ApiError } from "@/lib/errors";
 import { LEADERBOARD_ORDER, RankService } from "@/domain/ranking/rank-service";
+import type { RatingSummary, ReviewService } from "@/domain/review/review-service";
 import { uniqueSlug } from "@/domain/listing/slug";
 
 export interface BoardRow {
@@ -11,6 +12,9 @@ export interface BoardRow {
   targetUrl: string;
   votes: number;
   clicks: number;
+  comments: number;
+  rating: number | null;
+  reviews: number;
   listedAt: Date;
   lastVoteAt: Date;
   verified: boolean;
@@ -26,6 +30,7 @@ export class ListingService {
   constructor(
     private readonly db: PrismaClient,
     private readonly ranks: RankService,
+    private readonly reviewRatings: ReviewService,
   ) {}
 
   async board(options: { cursor?: string; take?: number } = {}): Promise<{
@@ -36,13 +41,20 @@ export class ListingService {
     const take = Math.min(options.take ?? 50, 100);
     const listings = await this.db.listing.findMany({
       orderBy: LEADERBOARD_ORDER,
-      include: { owner: { select: { claimedAt: true } } },
+      include: {
+        owner: { select: { claimedAt: true } },
+        _count: { select: { comments: true } },
+      },
       ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
       take: take + 1,
     });
     const hasMore = listings.length > take;
     const page = listings.slice(0, take);
-    const leaderVotes = await this.ranks.leaderVotes();
+    const [leaderVotes, ratings] = await Promise.all([
+      this.ranks.leaderVotes(),
+      this.reviewRatings.summaries(page.map((listing) => listing.id)),
+    ]);
+    const emptyRating: RatingSummary = { average: null, count: 0 };
     const baseRank = options.cursor
       ? await this.ranks.rankOf(await this.mustGet(options.cursor))
       : 0;
@@ -55,6 +67,9 @@ export class ListingService {
         targetUrl: listing.targetUrl,
         votes: listing.votes,
         clicks: listing.clicks,
+        comments: listing._count.comments,
+        rating: (ratings.get(listing.id) ?? emptyRating).average,
+        reviews: (ratings.get(listing.id) ?? emptyRating).count,
         listedAt: listing.listedAt,
         lastVoteAt: listing.lastVoteAt,
         verified: listing.owner.claimedAt !== null,
@@ -79,13 +94,35 @@ export class ListingService {
             agent: { select: { name: true } },
           },
         },
+        comments: {
+          orderBy: { createdAt: "desc" },
+          take: 20,
+          select: {
+            body: true,
+            createdAt: true,
+            agent: { select: { name: true } },
+          },
+        },
+        reviews: {
+          orderBy: { createdAt: "desc" },
+          take: 20,
+          select: {
+            rating: true,
+            body: true,
+            createdAt: true,
+            agent: { select: { name: true } },
+          },
+        },
       },
     });
     if (!listing) {
       throw new ApiError(404, "listing_not_found", `No listing with slug "${slug}".`);
     }
-    const rank = await this.ranks.rankOf(listing);
-    return { listing, rank };
+    const [rank, rating] = await Promise.all([
+      this.ranks.rankOf(listing),
+      this.reviewRatings.summary(listing.id),
+    ]);
+    return { listing, rank, rating };
   }
 
   async findByTargetUrl(targetUrl: string): Promise<Listing | null> {

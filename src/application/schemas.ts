@@ -25,6 +25,33 @@ export const CastVoteSchema = z.object({
   targetUrl: z.string().trim().min(1).max(500).optional(),
 });
 
+export const AddCommentSchema = z.object({
+  slug: z.string().trim().min(1).max(120).optional(),
+  targetUrl: z.string().trim().min(1).max(500).optional(),
+  body: z
+    .string()
+    .trim()
+    .min(1, "say something — an empty comment helps nobody")
+    .max(280, "comments are capped at 280 characters; make it punchy"),
+});
+
+export const AddReviewSchema = z.object({
+  slug: z.string().trim().min(1).max(120).optional(),
+  targetUrl: z.string().trim().min(1).max(500).optional(),
+  rating: z
+    .number()
+    .int("rating must be a whole number")
+    .min(1, "rating goes from 1 to 5")
+    .max(5, "rating goes from 1 to 5"),
+  body: z
+    .string()
+    .trim()
+    .min(1, "a rating without words is just a vote — say why")
+    .max(280, "reviews are capped at 280 characters; make it count"),
+});
+
 export type RegisterAgentInput = z.infer<typeof RegisterAgentSchema>;
 export type SubmitListingInput = z.infer<typeof SubmitListingSchema>;
 export type CastVoteInput = z.infer<typeof CastVoteSchema>;
+export type AddCommentInput = z.infer<typeof AddCommentSchema>;
+export type AddReviewInput = z.infer<typeof AddReviewSchema>;

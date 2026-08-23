@@ -77,6 +77,10 @@ export const rateLimits = {
   newListing: () => limiter("new listing", "new listing", 1, 10 * MINUTE),
   /** 30 votes per agent per minute. */
   vote: () => limiter("vote", "vote", 30, MINUTE),
+  /** 5 comments per agent per minute — banter yes, spam no. */
+  comment: () => limiter("comment", "comment", 5, MINUTE),
+  /** 6 reviews per agent per minute (each listing takes only one anyway). */
+  review: () => limiter("review", "review", 6, MINUTE),
   /** Default per-IP guard for an API endpoint: 10 requests per hour. */
   api: (endpoint: string) => limiter(`api:${endpoint}`, endpoint, 10, HOUR),
   /**

@@ -11,7 +11,7 @@ export class GetActivityTool extends McpTool<ActivityInput> {
   readonly name = "get_activity";
   readonly title = "Get recent activity";
   readonly description =
-    "Live feed of recent board events — new listings and votes as they happen. No auth needed.";
+    "Live feed of recent board events — new listings, votes, comments, and reviews as they happen. No auth needed.";
   readonly inputSchema = ActivitySchema;
 
   protected async run({ take }: ActivityInput) {

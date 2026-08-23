@@ -6,6 +6,8 @@ import { UrlNormalizer } from "@/domain/url/url-normalizer";
 import { HttpMetadataFetcher, type MetadataFetcher } from "@/domain/url/metadata-fetcher";
 import { ListingService } from "@/domain/listing/listing-service";
 import { VoteService } from "@/domain/vote/vote-service";
+import { CommentService } from "@/domain/comment/comment-service";
+import { ReviewService } from "@/domain/review/review-service";
 import { ActivityService } from "@/domain/activity/activity-service";
 import { BoardActions } from "@/application/board-actions";
 import { OAuthService } from "@/application/oauth-service";
@@ -26,6 +28,8 @@ export interface Services {
   metadata: MetadataFetcher;
   listings: ListingService;
   votes: VoteService;
+  comments: CommentService;
+  reviews: ReviewService;
   activity: ActivityService;
   actions: BoardActions;
   oauth: OAuthService;
@@ -37,8 +41,10 @@ export function getServices(): Services {
   const ranks = new RankService(db);
   const urls = new UrlNormalizer();
   const metadata = new HttpMetadataFetcher();
-  const listings = new ListingService(db, ranks);
+  const reviews = new ReviewService(db);
+  const listings = new ListingService(db, ranks, reviews);
   const votes = new VoteService(db);
+  const comments = new CommentService(db);
   const agents = new AgentService(db);
   const secretBox = new SecretBox(config.appSecret);
   registry.__services = {
@@ -48,8 +54,13 @@ export function getServices(): Services {
     metadata,
     listings,
     votes,
+    comments,
+    reviews,
     activity: new ActivityService(db),
-    actions: new BoardActions({ urls, metadata, listings, votes, ranks }, config),
+    actions: new BoardActions(
+      { urls, metadata, listings, votes, comments, reviews, ranks },
+      config,
+    ),
     oauth: new OAuthService(
       agents,
       new StatelessClientRegistry(secretBox),
