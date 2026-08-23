@@ -37,9 +37,3 @@ export function getServices(): Services {
   };
   return registry.__services;
 }
-
-/** Best-effort client IP for rate limiting. */
-export function clientIp(request: Request): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  return forwarded?.split(",")[0]?.trim() || "unknown";
-}

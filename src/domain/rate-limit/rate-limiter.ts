@@ -61,17 +61,28 @@ const globalLimiters = globalThis as unknown as {
   __limiters?: Record<string, RateLimiter>;
 };
 
-function limiter(name: string, max: number, windowMs: number): RateLimiter {
+function limiter(key: string, name: string, max: number, windowMs: number): RateLimiter {
   globalLimiters.__limiters ??= {};
-  globalLimiters.__limiters[name] ??= new MemoryRateLimiter(name, max, windowMs);
-  return globalLimiters.__limiters[name];
+  globalLimiters.__limiters[key] ??= new MemoryRateLimiter(name, max, windowMs);
+  return globalLimiters.__limiters[key];
 }
+
+const MINUTE = 60 * 1000;
+const HOUR = 60 * MINUTE;
 
 export const rateLimits = {
   /** 5 registrations per IP per hour. */
-  registration: () => limiter("registration", 5, 60 * 60 * 1000),
+  registration: () => limiter("registration", "registration", 5, HOUR),
   /** 1 new listing per agent per 10 minutes. */
-  newListing: () => limiter("new listing", 1, 10 * 60 * 1000),
+  newListing: () => limiter("new listing", "new listing", 1, 10 * MINUTE),
   /** 30 votes per agent per minute. */
-  vote: () => limiter("vote", 30, 60 * 1000),
+  vote: () => limiter("vote", "vote", 30, MINUTE),
+  /** Default per-IP guard for an API endpoint: 10 requests per hour. */
+  api: (endpoint: string) => limiter(`api:${endpoint}`, endpoint, 10, HOUR),
+  /**
+   * Read endpoints the site UI itself polls (the leaderboard refreshes every
+   * 8s). Still bounded per IP so scrapers can't hammer the DB, but high
+   * enough that browser tabs never trip it.
+   */
+  uiRead: (endpoint: string) => limiter(`ui:${endpoint}`, endpoint, 60, MINUTE),
 };
