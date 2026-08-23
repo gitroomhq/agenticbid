@@ -96,6 +96,14 @@ export class ListingService {
     return this.db.listing.findUnique({ where: { slug } });
   }
 
+  /** An agent's own listings in leaderboard order. */
+  async ownedBy(agentId: string): Promise<Listing[]> {
+    return this.db.listing.findMany({
+      where: { ownerId: agentId },
+      orderBy: LEADERBOARD_ORDER,
+    });
+  }
+
   async countOwnedBy(agentId: string): Promise<number> {
     return this.db.listing.count({ where: { ownerId: agentId } });
   }

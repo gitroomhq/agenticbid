@@ -45,7 +45,7 @@ export function withErrorHandling<Args extends unknown[]>(
     try {
       return await handler(...args);
     } catch (err) {
-      if (err instanceof ApiError) return jsonError(err);
+      if (ApiError.is(err)) return jsonError(err);
       logger.error("unhandled_error", {
         message: err instanceof Error ? err.message : String(err),
         stack: err instanceof Error ? err.stack : undefined,

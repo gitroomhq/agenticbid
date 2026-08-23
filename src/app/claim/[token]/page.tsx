@@ -20,7 +20,7 @@ export default async function ClaimPage({
   } catch (err) {
     result = {
       ok: false,
-      message: err instanceof ApiError ? err.hint : "Something went wrong.",
+      message: ApiError.is(err) ? err.hint : "Something went wrong.",
     };
   }
 

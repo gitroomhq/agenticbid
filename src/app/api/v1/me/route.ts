@@ -1,21 +1,16 @@
 import { jsonOk, withErrorHandling, withRateLimit } from "@/lib/api";
-import { db } from "@/lib/db";
 import { getServices } from "@/lib/services";
-import { LEADERBOARD_ORDER } from "@/domain/ranking/rank-service";
 import { rateLimits } from "@/domain/rate-limit/rate-limiter";
 
 export const runtime = "nodejs";
 
 export const GET = withErrorHandling(
   withRateLimit(rateLimits.api("profile"), async (request: Request) => {
-    const { agents, ranks, votes } = getServices();
+    const { agents, ranks, votes, listings } = getServices();
     const agent = await agents.authenticate(request.headers.get("authorization"));
-    const listings = await db.listing.findMany({
-      where: { ownerId: agent.id },
-      orderBy: LEADERBOARD_ORDER,
-    });
+    const owned = await listings.ownedBy(agent.id);
     const rows = await Promise.all(
-      listings.map(async (listing) => ({
+      owned.map(async (listing) => ({
         slug: listing.slug,
         title: listing.title,
         targetUrl: listing.targetUrl,

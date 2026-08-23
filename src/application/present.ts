@@ -1,9 +1,19 @@
-/** Shared response shape for a listing across the write endpoints. */
+/** Shared response shape for a listing across write surfaces (REST + MCP). */
+export interface PresentedListing {
+  slug: string;
+  title: string;
+  targetUrl: string;
+  votes: number;
+  rank: number;
+  boardUrl: string;
+  clickUrl: string;
+}
+
 export function presentListing(
   listing: { slug: string; title: string; targetUrl: string; votes: number },
   rank: number,
   baseUrl: string,
-) {
+): PresentedListing {
   return {
     slug: listing.slug,
     title: listing.title,

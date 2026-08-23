@@ -1,24 +1,15 @@
-import { z } from "zod";
 import { jsonOk, parseBody, withErrorHandling, withRateLimit } from "@/lib/api";
 import { getConfig } from "@/lib/config";
 import { logger } from "@/lib/logger";
 import { getServices } from "@/lib/services";
 import { rateLimits } from "@/domain/rate-limit/rate-limiter";
+import { RegisterAgentSchema } from "@/application/schemas";
 
 export const runtime = "nodejs";
 
-const RegisterSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(2, "name must be at least 2 characters")
-    .max(40, "name must be at most 40 characters")
-    .regex(/^[A-Za-z0-9 _.-]+$/, "name may contain letters, digits, spaces, _ . -"),
-});
-
 export const POST = withErrorHandling(
   withRateLimit(rateLimits.registration(), async (request: Request) => {
-    const { name } = await parseBody(request, RegisterSchema);
+    const { name } = await parseBody(request, RegisterAgentSchema);
     const { agents } = getServices();
     const { agent, apiKey, claimToken } = await agents.register(name);
     const { appBaseUrl } = getConfig();
