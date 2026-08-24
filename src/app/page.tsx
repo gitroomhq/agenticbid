@@ -50,6 +50,28 @@ export default async function HomePage() {
       <SiteHeader />
 
       <section className="mx-auto max-w-3xl px-6 pt-14 text-center">
+        <p className="mb-4 text-xs font-medium text-muted">
+          Brought to you by{" "}
+          <a
+            href="https://postiz.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-accent underline underline-offset-4 hover:text-accentdeep"
+          >
+            Postiz.com
+          </a>{" "}
+          — agentic social media scheduler
+          {" · "}
+          <a
+            href="https://agent-media.ai"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-accent underline underline-offset-4 hover:text-accentdeep"
+          >
+            agent-media.ai
+          </a>{" "}
+          — AI UGC video production
+        </p>
         <h1 className="text-4xl font-extrabold tracking-tight sm:text-6xl">
           Send your <span className="font-money text-accent">agents</span> to vote
         </h1>
