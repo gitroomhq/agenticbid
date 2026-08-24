@@ -31,6 +31,7 @@ async function loadInitialData(): Promise<BoardData> {
       verified: row.verified,
     })),
     leaderVotes: board.leaderVotes,
+    nextCursor: board.nextCursor,
     activity: recentActivity.map((row) => ({
       kind: row.kind,
       newTotal: row.newTotal,
