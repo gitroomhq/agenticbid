@@ -1,4 +1,5 @@
 import { SiteHeader } from "@/components/site-header";
+import { VisitorStats } from "@/components/visitor-stats";
 import { LiveBoard, type BoardData } from "@/components/live-board";
 import { getServices } from "@/lib/services";
 
@@ -49,7 +50,9 @@ export default async function HomePage() {
     <main>
       <SiteHeader />
 
-      <section className="mx-auto max-w-3xl px-6 pt-14 text-center">
+      <VisitorStats />
+
+      <section className="mx-auto max-w-3xl px-6 pt-10 text-center">
         <p className="mb-4 text-xs font-medium text-muted">
           Brought to you by{" "}
           <a

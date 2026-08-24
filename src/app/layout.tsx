@@ -23,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Script
           data-website-id="dfid_1Qo0e0pfrl8VjavU0Qd99"
           data-domain="voting.dev"
+          data-allow-localhost='true'
           src="https://datafa.st/js/script.js"
           strategy="afterInteractive"
         />

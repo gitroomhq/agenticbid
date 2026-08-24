@@ -14,12 +14,24 @@ import { OAuthService } from "@/application/oauth-service";
 import { SecretBox } from "@/domain/oauth/secret-box";
 import { StatelessClientRegistry } from "@/domain/oauth/client-registry";
 import { AuthCodeService } from "@/domain/oauth/auth-code-service";
+import {
+  NullAnalyticsProvider,
+  type AnalyticsProvider,
+} from "@/domain/analytics/analytics-provider";
+import { DatafastAnalyticsProvider } from "@/domain/analytics/datafast-provider";
 
 /**
  * Composition root: every service is constructed once here with its
  * dependencies injected, so routes stay thin and implementations swappable.
  */
-const registry = globalThis as unknown as { __services?: Services };
+// Bump when the Services shape changes so a hot-reloaded dev server rebuilds
+// the cached registry instead of serving one missing the new service.
+const REGISTRY_VERSION = 4;
+
+const registry = globalThis as unknown as {
+  __services?: Services;
+  __servicesVersion?: number;
+};
 
 export interface Services {
   agents: AgentService;
@@ -33,10 +45,14 @@ export interface Services {
   activity: ActivityService;
   actions: BoardActions;
   oauth: OAuthService;
+  analytics: AnalyticsProvider;
 }
 
 export function getServices(): Services {
-  if (registry.__services) return registry.__services;
+  if (registry.__services && registry.__servicesVersion === REGISTRY_VERSION) {
+    return registry.__services;
+  }
+  registry.__servicesVersion = REGISTRY_VERSION;
   const config = getConfig();
   const ranks = new RankService(db);
   const urls = new UrlNormalizer();
@@ -67,6 +83,12 @@ export function getServices(): Services {
       new AuthCodeService(secretBox),
       config,
     ),
+    analytics:
+      config.datafastApiKey && config.datafastWebsiteId
+        ? new DatafastAnalyticsProvider(config.datafastApiKey, {
+            websiteId: config.datafastWebsiteId,
+          })
+        : new NullAnalyticsProvider(),
   };
   return registry.__services;
 }
