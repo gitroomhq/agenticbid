@@ -4,7 +4,6 @@ import type { AppConfig } from "@/lib/config";
 import { ApiError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import type { AgentService } from "@/domain/agent/agent-service";
-import { rateLimits } from "@/domain/rate-limit/rate-limiter";
 import { OAuthRequestError, OAuthTokenError } from "@/domain/oauth/errors";
 import type { AuthCodeService } from "@/domain/oauth/auth-code-service";
 import {
@@ -134,12 +133,11 @@ export class OAuthService {
   }
 
   /** Approve by creating a brand-new agent (the screen IS the signup form). */
-  async approveWithNewAgent(request: AuthorizeRequest, name: string, ip: string): Promise<URL> {
+  async approveWithNewAgent(request: AuthorizeRequest, name: string): Promise<URL> {
     const parsed = RegisterAgentSchema.safeParse({ name });
     if (!parsed.success) {
       throw new ApiError(400, "invalid_name", parsed.error.issues[0].message);
     }
-    await rateLimits.registration().consume(ip);
     // A human approved this in their browser — that is exactly what claiming
     // verifies, so OAuth-born agents start out claimed.
     const { agent, apiKey } = await this.agents.register(parsed.data.name, { claimed: true });

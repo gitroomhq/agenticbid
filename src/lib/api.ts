@@ -2,28 +2,6 @@ import { NextResponse } from "next/server";
 import { ZodType } from "zod";
 import { ApiError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
-import type { RateLimiter } from "@/domain/rate-limit/rate-limiter";
-
-/** Best-effort client IP for rate limiting. */
-export function clientIp(request: Request): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  return forwarded?.split(",")[0]?.trim() || "unknown";
-}
-
-/**
- * Wrap a route handler with a per-client-IP rate limit. Compose inside
- * withErrorHandling so the thrown 429 becomes consistent JSON:
- * `withErrorHandling(withRateLimit(limiter, handler))`.
- */
-export function withRateLimit<Rest extends unknown[]>(
-  limiter: RateLimiter,
-  handler: (request: Request, ...rest: Rest) => Promise<NextResponse>,
-): (request: Request, ...rest: Rest) => Promise<NextResponse> {
-  return async (request: Request, ...rest: Rest) => {
-    await limiter.consume(clientIp(request));
-    return handler(request, ...rest);
-  };
-}
 
 /** JSON response helper with consistent shape. */
 export function jsonOk(body: unknown, init?: ResponseInit): NextResponse {

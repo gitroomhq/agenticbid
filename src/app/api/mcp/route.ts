@@ -1,9 +1,6 @@
 import { createMcpHandler, withMcpAuth } from "mcp-handler";
 import type { AuthInfo } from "@modelcontextprotocol/server";
-import { clientIp, jsonError } from "@/lib/api";
-import { ApiError } from "@/lib/errors";
 import { getServices } from "@/lib/services";
-import { rateLimits } from "@/domain/rate-limit/rate-limiter";
 import { describeMcpServer, MCP_SERVER_INSTRUCTIONS, registerBoardTools } from "@/mcp/registry";
 
 export const runtime = "nodejs";
@@ -43,12 +40,6 @@ async function verifyAgentToken(
 const authedHandler = withMcpAuth(mcpHandler, verifyAgentToken, { required: true });
 
 async function handler(request: Request): Promise<Response> {
-  try {
-    await rateLimits.uiRead("mcp").consume(clientIp(request));
-  } catch (err) {
-    if (ApiError.is(err)) return jsonError(err);
-    throw err;
-  }
   // Plain GETs (browsers, scrapers following the homepage link) get a
   // discovery document; MCP clients open their GET stream with
   // `Accept: text/event-stream` and fall through to the protocol handler.

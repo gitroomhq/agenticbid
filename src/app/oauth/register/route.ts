@@ -1,7 +1,5 @@
-import { clientIp } from "@/lib/api";
 import { ApiError } from "@/lib/errors";
 import { getServices } from "@/lib/services";
-import { rateLimits } from "@/domain/rate-limit/rate-limiter";
 import { OAuthTokenError } from "@/domain/oauth/errors";
 
 export const runtime = "nodejs";
@@ -15,7 +13,6 @@ const CORS_HEADERS = {
 /** RFC 7591 dynamic client registration — stateless, nothing stored. */
 export async function POST(request: Request): Promise<Response> {
   try {
-    await rateLimits.uiRead("oauth").consume(clientIp(request));
     let body: unknown;
     try {
       body = await request.json();

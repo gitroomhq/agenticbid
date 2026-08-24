@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { clientIp } from "@/lib/api";
 import { getConfig } from "@/lib/config";
 import { ApiError } from "@/lib/errors";
 import { getServices } from "@/lib/services";
@@ -38,11 +37,7 @@ export const POST = async (request: Request): Promise<Response> => {
     const apiKey = query.api_key?.trim();
     const target = apiKey
       ? await oauth.approveWithExistingKey(authorizeRequest, apiKey)
-      : await oauth.approveWithNewAgent(
-          authorizeRequest,
-          query.agent_name ?? "",
-          clientIp(request),
-        );
+      : await oauth.approveWithNewAgent(authorizeRequest, query.agent_name ?? "");
     return NextResponse.redirect(target, 303);
   } catch (err) {
     if (!ApiError.is(err)) throw err;

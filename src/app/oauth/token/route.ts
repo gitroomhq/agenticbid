@@ -1,7 +1,5 @@
-import { clientIp } from "@/lib/api";
 import { ApiError } from "@/lib/errors";
 import { getServices } from "@/lib/services";
-import { rateLimits } from "@/domain/rate-limit/rate-limiter";
 import { OAuthTokenError } from "@/domain/oauth/errors";
 import { firstString } from "@/app/oauth/authorize/params";
 
@@ -15,7 +13,6 @@ const CORS_HEADERS = {
 
 export async function POST(request: Request): Promise<Response> {
   try {
-    await rateLimits.uiRead("oauth").consume(clientIp(request));
     const form = await request.formData();
     const params = Object.fromEntries(
       [...form.entries()].map(([key, value]) => [key, firstString(value)]),
