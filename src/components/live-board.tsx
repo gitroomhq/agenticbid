@@ -205,7 +205,7 @@ export function LiveBoard({ initial }: { initial: BoardData }) {
               </span>
               <SiteIcon url={row.targetUrl} title={row.title} size={40} />
               <div className="min-w-0 flex-1">
-                <p className="flex items-center gap-1.5">
+                <p className="flex min-w-0 items-center gap-1.5">
                   <a
                     href={`/go/${row.slug}`}
                     target="_blank"
@@ -230,7 +230,7 @@ export function LiveBoard({ initial }: { initial: BoardData }) {
                     href={`/go/${row.slug}`}
                     target="_blank"
                     rel="noopener"
-                    className="truncate hover:text-fg"
+                    className="max-w-full truncate hover:text-fg"
                   >
                     {row.targetUrl.replace(/^https:\/\//, "")}
                   </a>
@@ -299,19 +299,19 @@ export function LiveBoard({ initial }: { initial: BoardData }) {
 
 function TrendingPanel({ rows }: { rows: TrendingRow[] }) {
   return (
-    <section className="rounded-[25px] border border-line bg-surface p-5">
+    <section className="min-w-0 overflow-hidden rounded-[25px] border border-line bg-surface p-5">
       <h2 className="text-sm font-bold">🔥 Trending right now</h2>
       <ul className="mt-3 divide-y divide-line">
         {rows.slice(0, 5).map((row) => (
           <li
             key={row.slug}
-            className="flex items-center justify-between gap-3 py-2"
+            className="flex min-w-0 items-center justify-between gap-3 py-2"
           >
             <a
               href={`/go/${row.slug}`}
               target="_blank"
               rel="noopener"
-              className="flex min-w-0 items-center gap-2 text-sm font-medium hover:text-accent"
+              className="flex min-w-0 flex-1 items-center gap-2 text-sm font-medium hover:text-accent"
             >
               <SiteIcon url={row.targetUrl} title={row.title} size={22} />
               <span className="truncate">{row.title}</span>
@@ -331,7 +331,7 @@ function TrendingPanel({ rows }: { rows: TrendingRow[] }) {
 
 function ActivityPanel({ rows }: { rows: ActivityRow[] }) {
   return (
-    <section className="rounded-[25px] border border-line bg-surface p-5">
+    <section className="min-w-0 overflow-hidden rounded-[25px] border border-line bg-surface p-5">
       <h2 className="flex items-center gap-1.5 text-sm font-bold">
         <span className="inline-block size-2 rounded-full bg-accent" /> Latest
         activity
@@ -340,9 +340,9 @@ function ActivityPanel({ rows }: { rows: ActivityRow[] }) {
         {rows.slice(0, 5).map((row, index) => (
           <li
             key={index}
-            className="flex items-center justify-between gap-3 py-2 text-sm"
+            className="flex min-w-0 items-center justify-between gap-3 py-2 text-sm"
           >
-            <p className="flex min-w-0 items-center gap-2 truncate">
+            <p className="flex min-w-0 flex-1 items-center gap-2">
               <SiteIcon
                 url={row.listing.targetUrl}
                 title={row.listing.title}
@@ -360,11 +360,12 @@ function ActivityPanel({ rows }: { rows: ActivityRow[] }) {
                     : "_blank"
                 }
                 rel="noopener"
-                className="font-semibold hover:text-accent"
+                className="shrink-0 truncate font-semibold hover:text-accent"
+                style={{ maxWidth: "50%" }}
               >
                 {row.listing.title}
               </a>{" "}
-              <span className="truncate text-muted">
+              <span className="min-w-0 flex-1 truncate text-muted">
                 {row.kind === "COMMENT" && `💬 ${row.agent}: “${row.body}”`}
                 {row.kind === "REVIEW" && (
                   <>
