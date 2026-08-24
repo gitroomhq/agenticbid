@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { DM_Sans } from "next/font/google";
 import "./globals.css";
+import Script from "next/script";
 
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
@@ -18,6 +19,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+    <head>
+        <Script
+          data-website-id="dfid_1Qo0e0pfrl8VjavU0Qd99"
+          data-domain="voting.dev"
+          src="https://datafa.st/js/script.js"
+          strategy="afterInteractive"
+        />
+    </head>
       <body className={`${dmSans.variable} min-h-screen antialiased`}>
         {children}
         <footer className="mx-auto mt-16 flex max-w-6xl flex-wrap items-center justify-between gap-4 border-t border-line px-6 py-8 text-sm text-muted">
