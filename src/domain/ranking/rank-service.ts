@@ -30,6 +30,7 @@ export class RankService {
   async rankOf(listing: { id: string; votes: number; listedAt: Date }): Promise<number> {
     const ahead = await this.db.listing.count({
       where: {
+        deletedAt: null,
         OR: [
           { votes: { gt: listing.votes } },
           { votes: listing.votes, listedAt: { lt: listing.listedAt } },
@@ -47,7 +48,7 @@ export class RankService {
   /** The current leader's vote count, or null when the board is empty. */
   async leaderVotes(excludeListingId?: string): Promise<number | null> {
     const leader = await this.db.listing.findFirst({
-      where: excludeListingId ? { id: { not: excludeListingId } } : undefined,
+      where: { deletedAt: null, ...(excludeListingId ? { id: { not: excludeListingId } } : {}) },
       orderBy: LEADERBOARD_ORDER,
       select: { votes: true },
     });

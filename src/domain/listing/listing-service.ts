@@ -3,6 +3,10 @@ import { ApiError } from "@/lib/errors";
 import { LEADERBOARD_ORDER, RankService } from "@/domain/ranking/rank-service";
 import type { RatingSummary, ReviewService } from "@/domain/review/review-service";
 import { uniqueSlug } from "@/domain/listing/slug";
+import { apexDomain, TargetScopeResolver } from "@/domain/url/target-scope";
+
+/** Filter fragment: listings that have not been soft-deleted. */
+export const ACTIVE_LISTING = { deletedAt: null } as const;
 
 export interface BoardRow {
   rank: number;
@@ -31,6 +35,7 @@ export class ListingService {
     private readonly db: PrismaClient,
     private readonly ranks: RankService,
     private readonly reviewRatings: ReviewService,
+    private readonly scopes: TargetScopeResolver = new TargetScopeResolver(),
   ) {}
 
   async board(options: { cursor?: string; take?: number } = {}): Promise<{
@@ -40,6 +45,7 @@ export class ListingService {
   }> {
     const take = Math.min(options.take ?? 50, 100);
     const listings = await this.db.listing.findMany({
+      where: ACTIVE_LISTING,
       orderBy: LEADERBOARD_ORDER,
       include: {
         owner: { select: { claimedAt: true } },
@@ -80,8 +86,8 @@ export class ListingService {
   }
 
   async bySlug(slug: string) {
-    const listing = await this.db.listing.findUnique({
-      where: { slug },
+    const listing = await this.db.listing.findFirst({
+      where: { slug, ...ACTIVE_LISTING },
       include: {
         owner: { select: { name: true, claimedAt: true } },
         voteEvents: {
@@ -125,24 +131,57 @@ export class ListingService {
     return { listing, rank, rating };
   }
 
+  /** Active listing with this exact canonical URL. */
   async findByTargetUrl(targetUrl: string): Promise<Listing | null> {
-    return this.db.listing.findUnique({ where: { targetUrl } });
+    return this.db.listing.findFirst({ where: { targetUrl, ...ACTIVE_LISTING } });
   }
 
   async findBySlugOrNull(slug: string): Promise<Listing | null> {
-    return this.db.listing.findUnique({ where: { slug } });
+    return this.db.listing.findFirst({ where: { slug, ...ACTIVE_LISTING } });
   }
 
-  /** An agent's own listings in leaderboard order. */
+  /**
+   * A deleted listing whose scope covers `targetUrl`, or null. Delisting is
+   * permanent for the whole target: "foo.com" being removed also blocks
+   * "www.foo.com", "app.foo.com", "foo.com/anything"; a removed X handle
+   * blocks that handle. Candidates are narrowed in SQL by domain, then
+   * checked precisely by the scope rules.
+   */
+  async findDeletedCovering(targetUrl: string): Promise<Listing | null> {
+    const host = new URL(targetUrl).hostname;
+    const candidates = await this.db.listing.findMany({
+      where: {
+        deletedAt: { not: null },
+        targetUrl: { contains: apexDomain(host), mode: "insensitive" },
+      },
+      orderBy: { deletedAt: "asc" },
+    });
+    return candidates.find((deleted) => this.scopes.covers(deleted.targetUrl, targetUrl)) ?? null;
+  }
+
+  /** An agent's own (active) listings in leaderboard order. */
   async ownedBy(agentId: string): Promise<Listing[]> {
     return this.db.listing.findMany({
-      where: { ownerId: agentId },
+      where: { ownerId: agentId, ...ACTIVE_LISTING },
       orderBy: LEADERBOARD_ORDER,
     });
   }
 
   async countOwnedBy(agentId: string): Promise<number> {
-    return this.db.listing.count({ where: { ownerId: agentId } });
+    return this.db.listing.count({ where: { ownerId: agentId, ...ACTIVE_LISTING } });
+  }
+
+  /**
+   * Soft-delete: the listing disappears from the board, feed, profiles, and
+   * redirects, but the row (and its votes/comments/reviews) stays so the
+   * target URL — and anything in its scope — can never be listed again.
+   * Idempotent.
+   */
+  async delist(id: string): Promise<Listing> {
+    return this.db.listing.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
   }
 
   /**
@@ -177,7 +216,7 @@ export class ListingService {
 
   /** Resolve a click: bump counters and return the redirect target. */
   async recordClick(slug: string): Promise<string> {
-    const listing = await this.db.listing.findUnique({ where: { slug } });
+    const listing = await this.db.listing.findFirst({ where: { slug, ...ACTIVE_LISTING } });
     if (!listing) {
       throw new ApiError(404, "listing_not_found", `No listing with slug "${slug}".`);
     }
@@ -199,7 +238,7 @@ export class ListingService {
     const since = new Date(Date.now() - windowHours * 3_600_000);
     const grouped = await this.db.clickEvent.groupBy({
       by: ["listingId"],
-      where: { createdAt: { gte: since } },
+      where: { createdAt: { gte: since }, listing: ACTIVE_LISTING },
       _count: { listingId: true },
       orderBy: { _count: { listingId: "desc" } },
       take,
@@ -226,7 +265,7 @@ export class ListingService {
   }
 
   private async mustGet(id: string): Promise<Listing> {
-    const listing = await this.db.listing.findUnique({ where: { id } });
+    const listing = await this.db.listing.findFirst({ where: { id, ...ACTIVE_LISTING } });
     if (!listing) throw new ApiError(400, "invalid_cursor", "Unknown pagination cursor.");
     return listing;
   }

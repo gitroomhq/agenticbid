@@ -72,6 +72,16 @@ export class BoardActions {
     const { urls, metadata, listings, ranks } = this.deps;
     const normalized = await urls.normalize(input.targetUrl);
 
+    const removed = await listings.findDeletedCovering(normalized.url);
+    if (removed) {
+      throw new ApiError(
+        410,
+        "listing_removed",
+        "This site was removed from the board for violating the rules and can't be listed again — not under a subdomain, path, or any other variant.",
+        { targetUrl: removed.targetUrl },
+      );
+    }
+
     const existing = await listings.findByTargetUrl(normalized.url);
     if (existing) {
       throw new ApiError(

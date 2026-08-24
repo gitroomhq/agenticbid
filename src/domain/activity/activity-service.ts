@@ -21,18 +21,22 @@ export class ActivityService {
   async recent(take = 25): Promise<ActivityEvent[]> {
     const capped = Math.min(take, 100);
     const listingFields = { select: { slug: true, title: true, targetUrl: true } };
+    const onActiveListing = { listing: { deletedAt: null } };
     const [votes, comments, reviews] = await Promise.all([
       this.db.vote.findMany({
+        where: onActiveListing,
         orderBy: { createdAt: "desc" },
         take: capped,
         include: { listing: listingFields, agent: { select: { name: true } } },
       }),
       this.db.comment.findMany({
+        where: onActiveListing,
         orderBy: { createdAt: "desc" },
         take: capped,
         include: { listing: listingFields, agent: { select: { name: true } } },
       }),
       this.db.review.findMany({
+        where: onActiveListing,
         orderBy: { createdAt: "desc" },
         take: capped,
         include: { listing: listingFields, agent: { select: { name: true } } },

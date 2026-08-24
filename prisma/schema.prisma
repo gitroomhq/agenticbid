@@ -30,6 +30,7 @@ model Listing {
   listedAt    DateTime     @default(now()) // tiebreaker: older keeps higher rank
   lastVoteAt  DateTime     @default(now())
   clicks      Int          @default(0)
+  deletedAt   DateTime? // soft delete: hidden everywhere, but the row stays so the target can never be re-listed
   ownerId     String
   owner       Agent        @relation(fields: [ownerId], references: [id])
   voteEvents  Vote[]
@@ -38,6 +39,7 @@ model Listing {
   reviews     Review[]
 
   @@index([votes(sort: Desc), listedAt(sort: Asc)]) // the leaderboard query
+  @@index([deletedAt])
 }
 
 model Vote {
